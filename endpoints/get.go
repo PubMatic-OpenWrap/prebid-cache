@@ -13,11 +13,13 @@ import (
 	"github.com/prebid/prebid-cache/backends"
 	"github.com/prebid/prebid-cache/constant"
 	"github.com/prebid/prebid-cache/stats"
+	uuid "github.com/satori/go.uuid"
 )
 
 func NewGetHandler(backend backends.Backend) func(http.ResponseWriter, *http.Request, httprouter.Params) {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		start := time.Now()
+		rqID := uuid.NewV4().String()
 		logger.Info("Get /cache called")
 		stats.LogCacheRequestedGetStats()
 		id, err := parseUUID(r)
@@ -33,18 +35,18 @@ func NewGetHandler(backend backends.Backend) func(http.ResponseWriter, *http.Req
 		defer cancel()
 		logger.Debug("UUID: %s requested at time: %v, Referer: %s", id, start.Unix(), r.Referer())
 		backendStartTime := time.Now()
-		value, err := backend.Get(ctx, id)
+		value, err := backend.Get(ctx, id, rqID)
 
 		backendEndTime := time.Now()
 		backendDiffTime := (backendEndTime.Sub(backendStartTime)).Nanoseconds() / 1000000
-		logger.Info("Time taken by backend.Get: %v", backendDiffTime)
+		logger.Info("Time taken by backend.Get: %v, rqID: %s", backendDiffTime, rqID)
 		if err != nil {
 			stats.LogCacheMissStats()
 			logger.Info("Cache miss for uuid: %v", id)
 			http.Error(w, "No content stored for uuid="+id, http.StatusNotFound)
 			end := time.Now()
 			totalTime := (end.Sub(start)).Nanoseconds() / 1000000
-			logger.Info("Total time for get: %v", totalTime)
+			logger.Info("Total time for get: %v, rqID: %s", totalTime, rqID)
 			return
 		}
 
@@ -59,7 +61,7 @@ func NewGetHandler(backend backends.Backend) func(http.ResponseWriter, *http.Req
 		}
 		end := time.Now()
 		totalTime := (end.Sub(start)).Nanoseconds() / 1000000
-		logger.Info("Total time for get: %v", totalTime)
+		logger.Info("Total time for get: %v, rqID: %s", totalTime, rqID)
 	}
 }
 

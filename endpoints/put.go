@@ -36,6 +36,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		start := time.Now()
+		rqID := uuid.NewV4().String()
 		stats.LogCacheRequestedPutStats()
 		logger.Info("POST /cache called")
 		body, err := ioutil.ReadAll(r.Body)
@@ -100,10 +101,10 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 			defer cancel()
 			backendStartTime := time.Now()
-			err = backend.Put(ctx, resps.Responses[i].UUID, toCache)
+			err = backend.Put(ctx, resps.Responses[i].UUID, toCache, rqID)
 			backendEndTime := time.Now()
 			backendDiffTime := (backendEndTime.Sub(backendStartTime)).Nanoseconds() / 1000000
-			logger.Info("Time taken by backend.Put: %v", backendDiffTime)
+			logger.Info("Time taken by backend.Put: %v, rqID: %s", backendDiffTime, rqID)
 			if err != nil {
 
 				if _, ok := err.(*backendDecorators.BadPayloadSize); ok {
@@ -156,7 +157,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 		w.Write(bytes)
 		end := time.Now()
 		totalTime := (end.Sub(start)).Nanoseconds() / 1000000
-		logger.Info("Total time for put: %v", totalTime)
+		logger.Info("Total time for put: %v, rqID: %s", totalTime, rqID)
 	}
 }
 

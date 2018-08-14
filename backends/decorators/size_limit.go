@@ -3,6 +3,9 @@ package decorators
 import (
 	"context"
 	"strconv"
+	"time"
+
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 
 	"github.com/prebid/prebid-cache/backends"
 )
@@ -21,11 +24,12 @@ type sizeCappedBackend struct {
 	limit    int
 }
 
-func (b *sizeCappedBackend) Get(ctx context.Context, key string) (string, error) {
-	return b.delegate.Get(ctx, key)
+func (b *sizeCappedBackend) Get(ctx context.Context, key string, rqID string) (string, error) {
+	return b.delegate.Get(ctx, key, rqID)
 }
 
-func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string) error {
+func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, rqID string) error {
+	startTime := time.Now()
 	valueLen := len(value)
 	if valueLen == 0 || valueLen > b.limit {
 		return &BadPayloadSize{
@@ -33,8 +37,10 @@ func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string) e
 			size:  valueLen,
 		}
 	}
-
-	return b.delegate.Put(ctx, key, value)
+	endTime := time.Now()
+	totalTime := (endTime.Sub(startTime)).Nanoseconds() / 1000000
+	logger.Info("Time for size limit check put: %v, rqID: %s", totalTime, rqID)
+	return b.delegate.Put(ctx, key, value, rqID)
 }
 
 type BadPayloadSize struct {

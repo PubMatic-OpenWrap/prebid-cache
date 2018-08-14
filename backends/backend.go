@@ -6,6 +6,6 @@ import (
 
 // Backend interface for storing data
 type Backend interface {
-	Put(ctx context.Context, key string, value string) error
-	Get(ctx context.Context, key string) (string, error)
+	Put(ctx context.Context, key string, value string, rqID string) error
+	Get(ctx context.Context, key string, rqID string) (string, error)
 }

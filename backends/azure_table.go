@@ -105,7 +105,7 @@ func (c *AzureTableBackend) Send(ctx context.Context, req *fasthttp.Request, res
 	return err
 }
 
-func (c *AzureTableBackend) Get(ctx context.Context, key string) (string, error) {
+func (c *AzureTableBackend) Get(ctx context.Context, key string, rqID string) (string, error) {
 
 	if key == "" {
 		return "", fmt.Errorf("Invalid Key")
@@ -144,7 +144,7 @@ func (c *AzureTableBackend) Get(ctx context.Context, key string) (string, error)
 	return av.Value, nil
 }
 
-func (c *AzureTableBackend) Put(ctx context.Context, key string, value string) error {
+func (c *AzureTableBackend) Put(ctx context.Context, key string, value string, rqID string) error {
 
 	if key == "" {
 		return fmt.Errorf("Invalid Key")

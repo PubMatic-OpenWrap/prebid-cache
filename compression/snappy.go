@@ -22,19 +22,19 @@ type snappyCompressor struct {
 	delegate backends.Backend
 }
 
-func (s *snappyCompressor) Put(ctx context.Context, key string, value string) error {
+func (s *snappyCompressor) Put(ctx context.Context, key string, value string, rqID string) error {
 	start := time.Now()
 
-	p := s.delegate.Put(ctx, key, string(snappy.Encode(nil, []byte(value))))
+	p := s.delegate.Put(ctx, key, string(snappy.Encode(nil, []byte(value))), rqID)
 	end := time.Now()
 	totalTime := (end.Sub(start)).Nanoseconds() / 1000000
-	logger.Info("Time for snappy put: %v", totalTime)
+	logger.Info("Time for snappy put: %v, rqID: %s", totalTime, rqID)
 	return p
 }
 
-func (s *snappyCompressor) Get(ctx context.Context, key string) (string, error) {
+func (s *snappyCompressor) Get(ctx context.Context, key string, rqID string) (string, error) {
 	start := time.Now()
-	compressed, err := s.delegate.Get(ctx, key)
+	compressed, err := s.delegate.Get(ctx, key, rqID)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +45,7 @@ func (s *snappyCompressor) Get(ctx context.Context, key string) (string, error) 
 	}
 	end := time.Now()
 	totalTime := (end.Sub(start)).Nanoseconds() / 1000000
-	logger.Info("Time for snappy get: %v", totalTime)
+	logger.Info("Time for snappy get: %v, rqID: %s", totalTime, rqID)
 
 	return string(decompressed), nil
 }

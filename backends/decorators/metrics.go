@@ -15,10 +15,10 @@ type backendWithMetrics struct {
 	gets     *metrics.MetricsEntry
 }
 
-func (b *backendWithMetrics) Get(ctx context.Context, key string) (string, error) {
+func (b *backendWithMetrics) Get(ctx context.Context, key string, rqID string) (string, error) {
 	b.gets.Request.Mark(1)
 	start := time.Now()
-	val, err := b.delegate.Get(ctx, key)
+	val, err := b.delegate.Get(ctx, key, rqID)
 	if err == nil {
 		b.gets.Duration.UpdateSince(start)
 	} else {
@@ -27,7 +27,7 @@ func (b *backendWithMetrics) Get(ctx context.Context, key string) (string, error
 	return val, err
 }
 
-func (b *backendWithMetrics) Put(ctx context.Context, key string, value string) error {
+func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, rqID string) error {
 	if strings.HasPrefix(value, backends.XML_PREFIX) {
 		b.puts.XmlRequest.Mark(1)
 	} else if strings.HasPrefix(value, backends.JSON_PREFIX) {
@@ -36,7 +36,7 @@ func (b *backendWithMetrics) Put(ctx context.Context, key string, value string) 
 		b.puts.InvalidRequest.Mark(1)
 	}
 	start := time.Now()
-	err := b.delegate.Put(ctx, key, value)
+	err := b.delegate.Put(ctx, key, value, rqID)
 	if err == nil {
 		b.puts.Duration.UpdateSince(start)
 	} else {

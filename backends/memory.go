@@ -9,7 +9,7 @@ type MemoryBackend struct {
 	db map[string]string
 }
 
-func (b *MemoryBackend) Get(ctx context.Context, key string) (string, error) {
+func (b *MemoryBackend) Get(ctx context.Context, key string, rqID string) (string, error) {
 	v, ok := b.db[key]
 	if !ok {
 		return "", fmt.Errorf("Not found")
@@ -18,7 +18,7 @@ func (b *MemoryBackend) Get(ctx context.Context, key string) (string, error) {
 	return v, nil
 }
 
-func (b *MemoryBackend) Put(ctx context.Context, key string, value string) error {
+func (b *MemoryBackend) Put(ctx context.Context, key string, value string, rqID string) error {
 	b.db[key] = value
 	return nil
 }

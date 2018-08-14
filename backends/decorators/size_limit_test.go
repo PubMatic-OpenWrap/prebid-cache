@@ -3,18 +3,22 @@ package decorators
 import (
 	"context"
 	"testing"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 func TestLargePayload(t *testing.T) {
+	rqID := uuid.NewV4().String()
 	delegate := &successfulBackend{}
 	wrapped := EnforceSizeLimit(delegate, 5)
-	assertBadPayloadError(t, wrapped.Put(context.Background(), "foo", "123456"))
+	assertBadPayloadError(t, wrapped.Put(context.Background(), "foo", "123456", rqID))
 }
 
 func TestAcceptablePayload(t *testing.T) {
+	rqID := uuid.NewV4().String()
 	delegate := &successfulBackend{}
 	wrapped := EnforceSizeLimit(delegate, 5)
-	assertNilError(t, wrapped.Put(context.Background(), "foo", "12345"))
+	assertNilError(t, wrapped.Put(context.Background(), "foo", "12345", rqID))
 }
 
 func assertBadPayloadError(t *testing.T, err error) {
@@ -38,10 +42,10 @@ func assertNilError(t *testing.T, err error) {
 
 type successfulBackend struct{}
 
-func (b *successfulBackend) Get(ctx context.Context, key string) (string, error) {
+func (b *successfulBackend) Get(ctx context.Context, key string, rqID string) (string, error) {
 	return "some-value", nil
 }
 
-func (b *successfulBackend) Put(ctx context.Context, key string, value string) error {
+func (b *successfulBackend) Put(ctx context.Context, key string, value string, rqID string) error {
 	return nil
 }

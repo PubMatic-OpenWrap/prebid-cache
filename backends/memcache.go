@@ -25,7 +25,7 @@ func NewMemcacheBackend(cfg config.Memcache) *Memcache {
 	return c
 }
 
-func (mc *Memcache) Get(ctx context.Context, key string) (string, error) {
+func (mc *Memcache) Get(ctx context.Context, key string, rqID string) (string, error) {
 	res, err := mc.client.Get(key)
 
 	if err != nil {
@@ -35,7 +35,7 @@ func (mc *Memcache) Get(ctx context.Context, key string) (string, error) {
 	return string(res.Value), nil
 }
 
-func (mc *Memcache) Put(ctx context.Context, key string, value string) error {
+func (mc *Memcache) Put(ctx context.Context, key string, value string, rqID string) error {
 	err := mc.client.Set(&memcache.Item{Key: key, Value: []byte(value)})
 
 	if err != nil {

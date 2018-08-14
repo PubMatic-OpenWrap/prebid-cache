@@ -32,7 +32,7 @@ func NewCassandraBackend(cfg config.Cassandra) *Cassandra {
 	return c
 }
 
-func (c *Cassandra) Get(ctx context.Context, key string) (string, error) {
+func (c *Cassandra) Get(ctx context.Context, key string, rqID string) (string, error) {
 	var res string
 	err := c.session.Query(`SELECT value FROM cache WHERE key = ? LIMIT 1`, key).
 		WithContext(ctx).
@@ -42,7 +42,7 @@ func (c *Cassandra) Get(ctx context.Context, key string) (string, error) {
 	return res, err
 }
 
-func (c *Cassandra) Put(ctx context.Context, key string, value string) error {
+func (c *Cassandra) Put(ctx context.Context, key string, value string, rqID string) error {
 	err := c.session.Query(`INSERT INTO cache (key, value) VALUES (?, ?) USING TTL 2400`, key, value).
 		WithContext(ctx).
 		Exec()
