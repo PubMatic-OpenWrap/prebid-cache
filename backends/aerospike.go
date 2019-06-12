@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	as "github.com/aerospike/aerospike-client-go"
 	"github.com/PubMatic-OpenWrap/prebid-cache/config"
 	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
+	as "github.com/aerospike/aerospike-client-go"
 )
 
-const setName = "uuid"
+const setName = "ucrid"
 const binValue = "value"
 
 type Aerospike struct {

@@ -146,7 +146,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 			fmt.Println("Error is:", err)
 			if err == nil {
 
-				var bodyStr string
+				//var bodyStr string
 				if strings.HasPrefix(value, backends.JSON_PREFIX) {
 					value = value[len(backends.JSON_PREFIX):]
 				}
@@ -154,8 +154,9 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 				fmt.Println("creativeId len:", len(p.CreativeId))
 				fmt.Println("Value", value)
 
-				json.Unmarshal([]byte(value), &bodyStr)
-				if bodyStr == "true" {
+				//json.Unmarshal([]byte(value), &bodyStr)
+				if value == "true" {
+					fmt.Println("Inside value = true")
 					resps = append(resps, ucrid[:len(p.CreativeId)])
 				}
 			}
