@@ -7,11 +7,11 @@ import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-cache/backends"
-	"github.com/prebid/prebid-cache/config"
-	"github.com/prebid/prebid-cache/endpoints"
-	"github.com/prebid/prebid-cache/endpoints/decorators"
-	"github.com/prebid/prebid-cache/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/PubMatic-OpenWrap/prebid-cache/config"
+	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints"
+	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints/decorators"
+	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
 	"github.com/rs/cors"
 )
 

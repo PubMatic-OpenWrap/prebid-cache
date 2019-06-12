@@ -6,17 +6,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
+	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-cache/backends"
-	backendDecorators "github.com/prebid/prebid-cache/backends/decorators"
-	"github.com/prebid/prebid-cache/constant"
-	log "github.com/prebid/prebid-cache/logger"
-	"github.com/prebid/prebid-cache/stats"
-	"github.com/satori/go.uuid"
 )
 
 // PutHandler serves "POST /cache" requests.
@@ -24,13 +22,15 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 	// TODO(future PR): Break this giant function apart
 	putAnyRequestPool := sync.Pool{
 		New: func() interface{} {
-			return PutRequest{}
+			//return PutRequest{}
+			return []ReqObj{}
 		},
 	}
 
 	putResponsePool := sync.Pool{
 		New: func() interface{} {
-			return PutResponse{}
+			//return PutResponse{}
+			return []string{}
 		},
 	}
 
@@ -46,7 +46,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 		}
 		defer r.Body.Close()
 
-		put := putAnyRequestPool.Get().(PutRequest)
+		put := putAnyRequestPool.Get().([]ReqObj)
 		defer putAnyRequestPool.Put(put)
 
 		err = json.Unmarshal(body, &put)
@@ -56,25 +56,25 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 			return
 		}
 
-		if len(put.Puts) > maxNumValues {
+		/*if len(put.Puts) > maxNumValues {
 			stats.LogCacheFailedPutStats(constant.KeyCountExceeded)
 			http.Error(w, fmt.Sprintf("More keys than allowed: %d", maxNumValues), http.StatusBadRequest)
 			return
-		}
+		}*/
 
-		resps := putResponsePool.Get().(PutResponse)
-		resps.Responses = make([]PutResponseObject, len(put.Puts))
+		resps := putResponsePool.Get().([]string)
+		//resps.BlockedCreativeIds = make([]string, len(put))
 		defer putResponsePool.Put(resps)
 
-		for i, p := range put.Puts {
-			if len(p.Value) == 0 {
+		for _, p := range put {
+			/*if len(p.Value) == 0 {
 				logger.Error("Missing value")
 				http.Error(w, "Missing value.", http.StatusBadRequest)
 				return
-			}
+			}*/
 
 			var toCache string
-			if p.Type == backends.XML_PREFIX {
+			/*if p.Type == backends.XML_PREFIX {
 				if p.Value[0] != byte('"') || p.Value[len(p.Value)-1] != byte('"') {
 					logger.Error("XML messages must have a String value. Found %v", p.Value)
 					http.Error(w, fmt.Sprintf("XML messages must have a String value. Found %v", p.Value), http.StatusBadRequest)
@@ -92,19 +92,32 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 				logger.Error("Type must be one of [\"json\", \"xml\"]. Found %v", p.Type)
 				http.Error(w, fmt.Sprintf("Type must be one of [\"json\", \"xml\"]. Found %v", p.Type), http.StatusBadRequest)
 				return
-			}
+			}*/
 
 			logger.Debug("Storing value: %s", toCache)
 
-			resps.Responses[i].UUID = uuid.NewV4().String()
+			ucrid := p.CreativeId + p.PartnerName
+
+			/*var aqObj AqObject
+			err = json.Unmarshal([]byte(p.Value), &aqObj)
+			fmt.Println("object to save:", p.Value)
+			fmt.Println("object to save:", aqObj)
+			fmt.Println("error is :", err)
+			resps.Responses[i].Ucrid = aqObj.Ucrid*/
+
+			//resps.Responses[i].UUID = uuid.NewV4().String()
 			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 			defer cancel()
 			backendStartTime := time.Now()
-			err = backend.Put(ctx, resps.Responses[i].UUID, toCache)
+			//err = backend.Put(ctx, resps.Responses[i].Ucrid, aqObj.IsMalware)
+			value, err := backend.Get(ctx, ucrid)
+			fmt.Println("ucrid:", ucrid)
+			//fmt.Println("value:", (value)[len(backends.JSON_PREFIX):])
+			fmt.Println("error is :", err)
 			backendEndTime := time.Now()
 			backendDiffTime := (backendEndTime.Sub(backendStartTime)).Nanoseconds() / 1000000
 			logger.Info("Time taken by backend.Put: %v", backendDiffTime)
-			if err != nil {
+			/*if err != nil {
 
 				if _, ok := err.(*backendDecorators.BadPayloadSize); ok {
 					stats.LogCacheFailedPutStats(constant.MaxSizeExceeded)
@@ -127,22 +140,39 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 				totalTime := (end.Sub(start)).Nanoseconds() / 1000000
 				logger.Info("Total time for put: %v", totalTime)
 				return
-			}
+			}*/
 			// log info
-			bid := make(map[string]interface{})
-			var bodyStr string
-			json.Unmarshal(p.Value, &bodyStr)
-			bodyByte := []byte(bodyStr)
+			//bid := make(map[string]interface{})
+			fmt.Println("Error is:", err)
+			if err == nil {
+
+				var bodyStr string
+				if strings.HasPrefix(value, backends.JSON_PREFIX) {
+					value = value[len(backends.JSON_PREFIX):]
+				}
+				//fmt.Println("jsonPrefixLen : ", jsonPrefixLen)
+				fmt.Println("creativeId len:", len(p.CreativeId))
+				fmt.Println("Value", value)
+
+				json.Unmarshal([]byte(value), &bodyStr)
+				if bodyStr == "true" {
+					resps = append(resps, ucrid[:len(p.CreativeId)])
+				}
+			}
+			/*bodyByte := []byte(bodyStr)
 			json.Unmarshal(bodyByte, &bid)
 			if bid != nil && bid["ext"] != nil {
 				bidExt := bid["ext"].(map[string]interface{})
 				pubID := bidExt["pubId"]           // TODO: check key name and type
 				platformID := bidExt["platformId"] // TODO: check key name and type
 				requestID := bidExt["requestId"]   // TODO: check key name and type
-				log.DebugWithRequestID(requestID.(string), "pubId: %s, platformId: %s, UUID: %s, Time: %v, Referer: %s", pubID, platformID, resps.Responses[i].UUID, start.Unix(), r.Referer())
-			}
+				log.DebugWithRequestID(requestID.(string), "pubId: %s, platformId: %s, UUID: %s, Time: %v, Referer: %s", pubID, platformID, resps.Responses[i].Ucrid, start.Unix(), r.Referer())
+			}*/
 
 		}
+		/*if resps.BlockedCreativeIds == nil || len(resps.BlockedCreativeIds) == 0 {
+			resps.BlockedCreativeIds[0] = ""
+		}*/
 
 		bytes, err := json.Marshal(&resps)
 		if err != nil {
@@ -161,7 +191,14 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 }
 
 type PutRequest struct {
-	Puts []PutObject `json:"puts"`
+	//Puts []PutObject `json:"puts"`
+	Puts []ReqObj `json:"puts"`
+}
+
+type ReqObj struct {
+	CreativeId  string `json:"creativeId"`
+	Creative    string `json:"creative"`
+	PartnerName string `json:"partnerName"`
 }
 
 type PutObject struct {
@@ -170,9 +207,14 @@ type PutObject struct {
 }
 
 type PutResponseObject struct {
-	UUID string `json:"uuid"`
+	Ucrid string `json:"ucrid"`
 }
 
 type PutResponse struct {
-	Responses []PutResponseObject `json:"responses"`
+	BlockedCreativeIds []string `json:"blockedCreativeIds"`
+}
+
+type AqObject struct {
+	Ucrid     string `json:"ucrid"`
+	IsMalware string `json:"isMalware"`
 }

@@ -1,7 +1,7 @@
 package metricstest
 
 import (
-	"github.com/prebid/prebid-cache/metrics"
+	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
 	"testing"
 )
 

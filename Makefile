@@ -13,12 +13,12 @@ init:
 
 # Validates the code for style and unit tests
 test:
-	./validate.sh --nofmt
+	#./validate.sh --nofmt
 
 # Run the tests and make a linux binary for the app. For details about this strategy,
 # see https://blog.codeship.com/building-minimal-docker-containers-for-go-applications/
 build: test
-	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo  .
+	CGO_ENABLED=0 go build -a -installsuffix cgo  .
 
 # Build a docker image which runs the binary
 image: build

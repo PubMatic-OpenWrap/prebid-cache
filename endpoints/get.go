@@ -10,9 +10,9 @@ import (
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-cache/backends"
-	"github.com/prebid/prebid-cache/constant"
-	"github.com/prebid/prebid-cache/stats"
+	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
+	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 )
 
 func NewGetHandler(backend backends.Backend) func(http.ResponseWriter, *http.Request, httprouter.Params) {
@@ -68,15 +68,15 @@ type GetResponse struct {
 }
 
 func parseUUID(r *http.Request) (string, error) {
-	id := r.URL.Query().Get("uuid")
+	id := r.URL.Query().Get("ucrid")
 	var err error = nil
 	if id == "" {
-		err = errors.New("Missing required parameter uuid")
+		err = errors.New("Missing required parameter ucrid")
 		stats.LogCacheFailedGetStats(constant.UUIDMissing)
 	} else if len(id) != 36 {
 		// UUIDs are 36 characters long... so this quick check lets us filter out most invalid
 		// ones before even checking the backend.
-		err = fmt.Errorf("No content stored for uuid=%s", id)
+		err = fmt.Errorf("No content stored for ucrid=%s", id)
 		stats.LogCacheFailedGetStats(constant.InvalidUUID)
 	}
 	return id, err

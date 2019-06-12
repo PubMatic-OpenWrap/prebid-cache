@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/prebid/prebid-cache/config"
+	"github.com/PubMatic-OpenWrap/prebid-cache/config"
 )
 
 // MemcacheConfig is used to configure the cluster

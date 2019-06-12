@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-cache/backends"
-	"github.com/prebid/prebid-cache/stats"
+	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 )
 
 func init() {
