@@ -2,51 +2,60 @@ package stats
 
 import (
 	"fmt"
-
-	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
-
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"git.pubmatic.com/PubMatic/go-common.git/stats"
+	stats "git.pubmatic.com/PubMatic/go-common.git/stats2"
+	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
 )
 
-var S *stats.S
+var sc *stats.Client
+
+type statLogger struct{}
+
+func (l statLogger) Error(format string, args ...interface{}) {
+	logger.Error(format, args...)
+}
+
+func (l statLogger) Info(format string, args ...interface{}) {
+	logger.Info(format, args...)
+}
 
 func InitStat(statIP, statPort, statServer, dc string) {
-	statURL := statIP + ":" + statPort
-	S = stats.NewStats(statURL, statServer, dc)
-	if S == nil {
-		logger.Error("Falied to Connect Stat Server ")
+
+	cgf := stats.Config{
+		Host:   statIP,
+		Port:   statPort,
+		Server: statServer,
+		DC:     dc,
+	}
+
+	var err error
+	sc, err = stats.NewClient(cgf, statLogger{})
+	if err != nil {
+		logger.Error("failed to initialize stats client")
 	}
 }
 
 func LogCacheFailedGetStats(errorString string) {
 	fmt.Printf(constant.StatsKeyCacheFailedGet, errorString)
-	S.Increment(fmt.Sprintf(constant.StatsKeyCacheFailedGet, errorString),
-		constant.StatsKeyCacheFailedGetCutoff, 1)
+	sc.PublishStat(constant.StatsKeyCacheFailedGet, 1, errorString)
 }
 
 func LogCacheMissStats() {
-	S.Increment(fmt.Sprintf(constant.StatsKeyCacheMiss),
-		constant.StatsKeyCacheMissCutOff, 1)
+	sc.PublishStat(constant.StatsKeyCacheMiss, 1)
 }
 
 func LogCacheFailedPutStats(errorString string) {
-	S.Increment(fmt.Sprintf(constant.StatsKeyCacheFailedPut, errorString),
-		constant.StatsKeyCacheFailedPutCutoff, 1)
+	sc.PublishStat(constant.StatsKeyCacheFailedPut, 1, errorString)
 }
 
 func LogCacheRequestedGetStats() {
-	S.Increment(fmt.Sprintf(constant.StatsKeyCacheRequestedGet),
-		constant.StatsKeyCacheRequestedGetCutoff, 1)
+	sc.PublishStat(constant.StatsKeyCacheRequestedGet, 1)
 }
 
 func LogCacheRequestedPutStats() {
-	S.Increment(fmt.Sprintf(constant.StatsKeyCacheRequestedPut),
-		constant.StatsKeyCacheRequestedPutCutoff, 1)
+	sc.PublishStat(constant.StatsKeyCacheRequestedPut, 1)
 }
 
 func LogAerospikeErrorStats() {
-	S.Increment(fmt.Sprintf(constant.StatsKeyAerospikeCreationError),
-		constant.StatsKeyAerospikeCreationErrorCutoff, 1)
-
+	sc.PublishStat(constant.StatsKeyAerospikeCreationError, 1)
 }
