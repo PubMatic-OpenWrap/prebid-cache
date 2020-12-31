@@ -25,7 +25,13 @@ func NewConfig() Configuration {
 	//Initialize Stats Server
 	stats.InitStat(cfg.Stats.StatsHost, cfg.Stats.StatsPort,
 		cfg.Server.ServerName,
-		cfg.Stats.StatsDCName)
+		cfg.Stats.StatsDCName,
+		cfg.Stats.PublishInterval,
+		cfg.Stats.Retries,
+		cfg.Stats.DialTimeout,
+		cfg.Stats.KeepAliveDur,
+		cfg.Stats.MaxIdleConns,
+		cfg.Stats.MaxIdleConnsPerHost)
 
 	var logConf logger.LogConf
 	logConf.LogLevel = cfg.OWLog.LogLevel
@@ -186,15 +192,27 @@ func (cfg *Influx) validateAndLog() {
 }
 
 type Stats struct {
-	StatsHost   string `mapstructure:"host"`
-	StatsPort   string `mapstructure:"port"`
-	StatsDCName string `mapstructure:"dc_name"`
+	StatsHost           string `mapstructure:"host"`
+	StatsPort           string `mapstructure:"port"`
+	StatsDCName         string `mapstructure:"dc_name"`
+	PublishInterval     int    `mapstructure:"publish_interval"`
+	Retries             int    `mapstructure:"retries"`
+	DialTimeout         int    `mapstructure:"dial_timeout"`
+	KeepAliveDur        int    `mapstructure:"keep_alive_duration"`
+	MaxIdleConns        int    `mapstructure:"max_idle_conns"`
+	MaxIdleConnsPerHost int    `mapstructure:"max_idle_conns_per_host"`
 }
 
 func (cfg *Stats) validateAndLog() {
 	logger.Info("config.stats.host: %s", cfg.StatsHost)
 	logger.Info("config.stats.port: %s", cfg.StatsPort)
 	logger.Info("config.stats.dc_name: %s", cfg.StatsDCName)
+	logger.Info("config.stats.publish_interval: %s", cfg.PublishInterval)
+	logger.Info("config.stats.retries: %s", cfg.Retries)
+	logger.Info("config.stats.dial_timeout: %s", cfg.DialTimeout)
+	logger.Info("config.stats.keep_alive_duration: %s", cfg.KeepAliveDur)
+	logger.Info("config.stats.max_idle_conns: %s", cfg.MaxIdleConns)
+	logger.Info("config.stats.max_idle_conns_per_host: %s", cfg.MaxIdleConnsPerHost)
 }
 
 type Server struct {

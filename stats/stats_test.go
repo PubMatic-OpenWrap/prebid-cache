@@ -5,7 +5,8 @@ import (
 )
 
 func TestStatsInit(t *testing.T) {
-	InitStat("127.0.0.1", "8888", "TestHost", "TestDC")
+	InitStat("127.0.0.1", "8888", "TestHost", "TestDC",
+		2, 3, 2, 15, 2, 1)
 }
 
 func TestStatsLogCacheFailedGetStats(t *testing.T) {

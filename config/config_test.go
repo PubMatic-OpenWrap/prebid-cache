@@ -113,6 +113,12 @@ stats:
   host: "stats-host"
   port: "stats-port"
   dc_name: "stats-dc-name"
+  publish_interval: 2
+  retries: 3
+  dial_timeout: 2
+  keep_alive_duration: 15
+  max_idle_conns: 2
+  max_idle_conns_per_host: 1
 server:
   port: "server-port"
   name: "server-name"

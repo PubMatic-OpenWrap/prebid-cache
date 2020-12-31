@@ -3,7 +3,7 @@ package stats
 import (
 	"fmt"
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	stats "git.pubmatic.com/PubMatic/go-common.git/stats2"
+	stats "git.pubmatic.com/PubMatic/go-common.git/tcpstats"
 	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
 )
 
@@ -19,13 +19,20 @@ func (l statLogger) Info(format string, args ...interface{}) {
 	logger.Info(format, args...)
 }
 
-func InitStat(statIP, statPort, statServer, dc string) {
+func InitStat(statIP, statPort, statServer, dc string,
+	pubInterval, retries, dialTimeout, keepAliveDur, maxIdleConn, maxIdleConnPerHost int) {
 
 	cgf := stats.Config{
-		Host:   statIP,
-		Port:   statPort,
-		Server: statServer,
-		DC:     dc,
+		Host:                statIP,
+		Port:                statPort,
+		Server:              statServer,
+		DC:                  dc,
+		PublishingInterval:  pubInterval,
+		Retries:             retries,
+		DialTimeout:         dialTimeout,
+		KeepAliveDuration:   keepAliveDur,
+		MaxIdleConns:        maxIdleConn,
+		MaxIdleConnsPerHost: maxIdleConnPerHost,
 	}
 
 	var err error
@@ -37,7 +44,7 @@ func InitStat(statIP, statPort, statServer, dc string) {
 
 func LogCacheFailedGetStats(errorString string) {
 	fmt.Printf(constant.StatsKeyCacheFailedGet, errorString)
-	sc.PublishStat(constant.StatsKeyCacheFailedGet, 1, errorString)
+	sc.PublishStat(fmt.Sprintf(constant.StatsKeyCacheFailedGet, errorString), 1)
 }
 
 func LogCacheMissStats() {
@@ -45,7 +52,7 @@ func LogCacheMissStats() {
 }
 
 func LogCacheFailedPutStats(errorString string) {
-	sc.PublishStat(constant.StatsKeyCacheFailedPut, 1, errorString)
+	sc.PublishStat(fmt.Sprintf(constant.StatsKeyCacheFailedPut, errorString), 1)
 }
 
 func LogCacheRequestedGetStats() {
