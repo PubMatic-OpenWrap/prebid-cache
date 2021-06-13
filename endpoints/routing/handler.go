@@ -8,6 +8,7 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-cache/config"
 	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints"
 	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints/decorators"
+	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints/kvserver"
 	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
@@ -22,6 +23,8 @@ func NewHandler(cfg config.Configuration, dataStore backends.Backend, appMetrics
 	router.GET("/cache", decorators.MonitorHttp(endpoints.NewGetHandler(dataStore), appMetrics.Gets))
 	router.GET("/healthcheck", endpoints.HealthCheck) // Determines whether the server is up and running.
 
+	//Init KVServer
+	kvserver.InitKVServerHandlers(router)
 	handler := handleCors(router)
 	handler = handleRateLimiting(handler, cfg.RateLimiting)
 	return handler
