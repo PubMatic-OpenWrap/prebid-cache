@@ -18,24 +18,24 @@ func InitKVServerHandlers(router *httprouter.Router) {
 
 	//lineitems
 	router.GET("/kv/add/lineitem", kv_add_lineitem)
-	router.GET("/kv/edit/lineitem", kv_edit_lineitem)
-	router.GET("/kv/del/lineitem", kv_del_lineitem)
 	router.GET("/kv/list/lineitem", kv_list_lineitem)
+	//router.GET("/kv/edit/lineitem", kv_edit_lineitem)
+	//router.GET("/kv/del/lineitem", kv_del_lineitem)
 
 	//creatives
 	router.GET("/kv/add/creative", kv_add_creative)
-	router.GET("/kv/edit/creative", kv_edit_creative)
-	router.GET("/kv/del/creative", kv_del_creative)
 	router.GET("/kv/list/creative", kv_list_creative)
+	//router.GET("/kv/edit/creative", kv_edit_creative)
+	//router.GET("/kv/del/creative", kv_del_creative)
 
 	//lineitem_creative_mapping
 	router.GET("/kv/add/licr", kv_add_licr)
 	router.GET("/kv/del/licr", kv_del_licr)
-	router.GET("/kv/list/licr", kv_list_licr)
+	//router.GET("/kv/list/licr", kv_list_licr)
 
 	//contextual_signal_interest_group_mapping
-	router.GET("/kv/add/csig", kv_add_csig)
-	router.GET("/kv/del/csig", kv_del_csig)
+	//router.GET("/kv/add/csig", kv_add_csig)
+	//router.GET("/kv/del/csig", kv_del_csig)
 	router.GET("/kv/get/csig", kv_get_csig)
 
 	//impression_count
@@ -56,6 +56,7 @@ func success_response(w http.ResponseWriter, r *http.Request, response string) {
 	w.WriteHeader(http.StatusOK)
 }
 
+//lineitems
 func kv_add_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logger.Debug("Adding new lineitem")
 
@@ -63,6 +64,9 @@ func kv_add_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		GetInt(r.FormValue("id")),
 		GetInt(r.FormValue("type")),
 		GetFloat64(r.FormValue("price")),
+		r.FormValue("device"),
+		r.FormValue("os"),
+		r.FormValue("ig"),
 		r.FormValue("fcap"),
 		r.FormValue("startdate"), r.FormValue("enddate"),
 		GetInt(r.FormValue("goal")))
@@ -74,12 +78,9 @@ func kv_add_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	//Add New LineItem
 	AddNewLineItem(li)
 
-	success_response(w, r, SUCCESS)
-}
-func kv_edit_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	success_response(w, r, SUCCESS)
-}
-func kv_del_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	//Adding Mapping
+	//AddCSIGLIMapping(li.RegExKey, li.ID)
+
 	success_response(w, r, SUCCESS)
 }
 func kv_list_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -115,12 +116,6 @@ func kv_add_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	AddNewCreative(cr)
 	success_response(w, r, SUCCESS)
 }
-func kv_edit_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	success_response(w, r, SUCCESS)
-}
-func kv_del_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	success_response(w, r, SUCCESS)
-}
 func kv_list_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var response []byte
 	if len(r.FormValue("id")) == 0 {
@@ -140,7 +135,7 @@ func kv_list_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 //lineitem_creative_mapping
 func kv_add_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	logger.Debug("Adding new lineitem creative mapping")
+	logger.Debug("Mapping new lineitem creative mapping")
 	liid := GetInt(r.FormValue("liid"))
 	creatives := strings.Split(r.FormValue("crid"), ",")
 
@@ -159,26 +154,27 @@ func kv_add_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	success_response(w, r, SUCCESS)
 }
 func kv_del_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	success_response(w, r, SUCCESS)
-}
-func kv_list_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var response []byte
-	if len(r.FormValue("liid")) == 0 {
-		response, _ = json.Marshal(lineitemCreativeMap)
-	} else {
-		id := GetInt(r.FormValue("liid"))
-		li, ok := lineitemCreativeMap[id]
-		if !ok {
-			default_error_response(w, r, fmt.Errorf("lineitem not present : %d", id))
-			return
-		}
-		response, _ = json.Marshal(li)
+	logger.Debug("Unmapping new lineitem creative mapping")
+	liid := GetInt(r.FormValue("liid"))
+	creatives := strings.Split(r.FormValue("crid"), ",")
+
+	if _, ok := lineItemMap[liid]; !ok {
+		default_error_response(w, r, fmt.Errorf("lineitem not present : %d", liid))
+		return
 	}
 
-	success_response(w, r, string(response))
+	for _, creative := range creatives {
+		crid := GetInt(creative)
+		if _, ok := creativeMap[crid]; ok {
+			UnmapLineItemCreativeMapping(liid, crid)
+		}
+	}
+
+	success_response(w, r, SUCCESS)
 }
 
 //contextual_signal_interest_group_mapping
+/*
 func kv_add_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	cskey := r.FormValue("cskey")
 	if len(cskey) == 0 {
@@ -205,32 +201,14 @@ func kv_add_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	success_response(w, r, SUCCESS)
 }
-
-func kv_del_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	success_response(w, r, SUCCESS)
-}
-
+*/
 func kv_get_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	cskey := r.FormValue("cskey")
-	if len(cskey) == 0 {
-		default_error_response(w, r, fmt.Errorf("contextual_signal_key not present"))
+	key := r.FormValue("key")
+	if len(key) == 0 {
+		default_error_response(w, r, fmt.Errorf("key not present"))
 	}
 
-	csvalue := r.FormValue("csvalue")
-	if len(csvalue) == 0 {
-		default_error_response(w, r, fmt.Errorf("contextual_signal_value not present"))
-	}
-
-	ig := r.FormValue("ig")
-	if len(ig) == 0 {
-		default_error_response(w, r, fmt.Errorf("interest_group not present"))
-	}
-	result := &CSIGResult{
-		LineItems: make(map[int]*LineItem),
-		Creatives: make(map[int]*Creative),
-	}
-	AppendResult(cskey, csvalue, ig, result)
-
+	result := GetResult(key)
 	response, _ := json.Marshal(result)
 	success_response(w, r, string(response))
 }

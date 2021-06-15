@@ -2,6 +2,8 @@ package kvserver
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -26,7 +28,14 @@ type LineItem struct {
 	StartDate time.Time `json:"startdate,omitempty"`
 	EndDate   time.Time `json:"enddate,omitempty"`
 	Goal      int       `json:"goal,omitempty"`
+	Creatives []int     `json:"creatives,omitempty"`
+
 	//pacing calculations
+	Device                string         `json:"device,omitempty"`
+	OS                    string         `json:"os,omitempty"`
+	IG                    string         `json:"ig,omitempty"`
+	RegExKey              string         `json:"targetings,omitempty"`
+	RegExpression         *regexp.Regexp `json:"-"`
 	CurrentDate           time.Time      `json:"-"`
 	DailyGoal             int            `json:"-"`
 	TotalImpressionServed int            `json:"-"`
@@ -38,6 +47,9 @@ func NewLineItem(
 	id int,
 	litype int,
 	price float64,
+	device string,
+	os string,
+	ig string,
 	fcap string,
 	startdate string,
 	enddate string,
@@ -46,6 +58,9 @@ func NewLineItem(
 		ID:          id,
 		Type:        litype,
 		Price:       price,
+		Device:      device,
+		OS:          os,
+		IG:          ig,
 		FCap:        fcap,
 		Goal:        goal,
 		CurrentDate: time.Now(),
@@ -74,6 +89,11 @@ func NewLineItem(
 
 	if obj.StartDate.Unix() >= obj.EndDate.Unix() {
 		return nil, fmt.Errorf("invalid lineitem startdate > enddate")
+	}
+
+	obj.formTargetingKey()
+	if obj.RegExpression, err = regexp.Compile(obj.RegExKey); err != nil {
+		return nil, err
 	}
 
 	obj.calculateGoal()
@@ -148,4 +168,19 @@ func (l *LineItem) GetPacingRate(csigSlotImpression int) int {
 	return pacingrate
 }
 
+func (l *LineItem) formTargetingKey() {
+	//(samsung|mi|,):(apple|android|,):(sports|music|,)+
+	//(samsung|mi|,):(.*):(sports|music|,)+
+	l.RegExKey = strings.Join([]string{
+		getkey(l.Device),
+		getkey(l.OS),
+		getkey(l.IG) + "+"},
+		":")
+}
 
+func getkey(value string) string {
+	if len(value) == 0 {
+		return "(.*)"
+	}
+	return fmt.Sprintf("(%s|,)", strings.Replace(value, ",", "|", -1))
+}

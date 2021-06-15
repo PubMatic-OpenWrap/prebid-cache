@@ -1,16 +1,12 @@
 package kvserver
 
-import "fmt"
-
 var lineItemMap map[int]*LineItem
 var creativeMap map[int]*Creative
-var lineitemCreativeMap map[int][]int
 var csigLineItemMap map[string][]int
 
 func Initialise() {
 	lineItemMap = make(map[int]*LineItem)
 	creativeMap = make(map[int]*Creative)
-	lineitemCreativeMap = make(map[int][]int)
 	csigLineItemMap = make(map[string][]int)
 }
 
@@ -24,34 +20,32 @@ func AddNewCreative(creative *Creative) {
 }
 
 func AddNewLineItemCreativeMapping(lineItemID, creativeID int) {
-	values := lineitemCreativeMap[lineItemID]
-	values = append(values, creativeID)
-	lineitemCreativeMap[lineItemID] = values
-}
-
-func AddCSIGLIMapping(csigkey string, lineitemID int) {
-	values := csigLineItemMap[csigkey]
-	values = append(values, lineitemID)
-	csigLineItemMap[csigkey] = values
-}
-
-func UnmapLineItemCreativeMapping(lineItemID, creativeID int) {
-	if creatives, ok := lineitemCreativeMap[lineItemID]; ok {
-		for index, id := range creatives {
-			if id == creativeID {
-				creatives = append(creatives[:index], creatives[index+1:]...)
-				break
-			}
-		}
-
-		if len(creatives) == 0 {
-			delete(lineitemCreativeMap, lineItemID)
+	if li, ok := lineItemMap[lineItemID]; ok {
+		if _, ok := creativeMap[creativeID]; ok {
+			li.Creatives = append(li.Creatives, creativeID)
 		}
 	}
 }
 
-func UnmapCSIGLIMapping(csigkey string, lineItemID int) {
-	if values, ok := csigLineItemMap[csigkey]; ok {
+func AddCSIGLIMapping(key string, lineitemID int) {
+	values := csigLineItemMap[key]
+	values = append(values, lineitemID)
+	csigLineItemMap[key] = values
+}
+
+func UnmapLineItemCreativeMapping(lineItemID, creativeID int) {
+	if li, ok := lineItemMap[lineItemID]; ok {
+		for index, id := range li.Creatives {
+			if id == creativeID {
+				li.Creatives = append(li.Creatives[:index], li.Creatives[index+1:]...)
+				break
+			}
+		}
+	}
+}
+
+func UnmapCSIGLIMapping(key string, lineItemID int) {
+	if values, ok := csigLineItemMap[key]; ok {
 		for index, id := range values {
 			if id == lineItemID {
 				values = append(values[:index], values[index+1:]...)
@@ -60,13 +54,9 @@ func UnmapCSIGLIMapping(csigkey string, lineItemID int) {
 		}
 
 		if len(values) == 0 {
-			delete(csigLineItemMap, csigkey)
+			delete(csigLineItemMap, key)
 		}
 	}
-}
-
-func CSIGKey(csKey, csValue, ig string) string {
-	return fmt.Sprintf("%s:%s:%s", csKey, csValue, ig)
 }
 
 func FlushAll() {
