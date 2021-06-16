@@ -146,7 +146,7 @@ func getkey(value string) string {
 	if len(value) == 0 {
 		return "(.*)"
 	}
-	return fmt.Sprintf("(%s|,)", strings.Replace(value, ",", "|", -1))
+	return fmt.Sprintf("(%s)", strings.Replace(value, ",", "|", -1))
 }
 
 func (l *LineItem) calculateGoal() {
