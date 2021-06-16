@@ -3,6 +3,7 @@ package kvserver
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -64,6 +65,7 @@ func kv_add_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		GetInt(r.FormValue("id")),
 		GetInt(r.FormValue("type")),
 		GetFloat64(r.FormValue("price")),
+		r.FormValue("source"),
 		r.FormValue("device"),
 		r.FormValue("os"),
 		r.FormValue("ig"),
@@ -215,6 +217,43 @@ func kv_get_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 //impression_count
 func kv_update_ic(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	/*
+		[
+		{
+			"auc_lineitem_id": 101,
+			"imp_count": 1,
+			"winning_imp_count": 1
+		},
+		{
+			"auc_lineitem_id": 102,
+			"imp_count": 2,
+			"winning_imp_count": 2
+		}
+		]
+	*/
+	logger.Debug("Update LineItem Analytics Numbers")
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		default_error_response(w, r, err)
+	}
+	r.Body.Close()
+
+	type temp struct {
+		LineItemID   int `json:"auc_lineitem_id,omitempty"`
+		ImpCount     int `json:"imp_count,omitempty"`
+		WinningCount int `json:"winning_imp_count,omitempty"`
+	}
+	result := []temp{}
+	if err := json.Unmarshal(body, result); nil != err {
+		default_error_response(w, r, err)
+	}
+
+	for _, item := range result {
+		if li, ok := lineItemMap[item.LineItemID]; ok {
+			li.updateImpressions(item.ImpCount, item.WinningCount)
+		}
+	}
+
 	success_response(w, r, SUCCESS)
 }
 

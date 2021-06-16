@@ -2,12 +2,13 @@ package kvserver
 
 var lineItemMap map[int]*LineItem
 var creativeMap map[int]*Creative
-var csigLineItemMap map[string][]int
+
+//var csigLineItemMap map[string][]int
 
 func Initialise() {
 	lineItemMap = make(map[int]*LineItem)
 	creativeMap = make(map[int]*Creative)
-	csigLineItemMap = make(map[string][]int)
+	//csigLineItemMap = make(map[string][]int)
 }
 
 //Add Functions
@@ -27,12 +28,6 @@ func AddNewLineItemCreativeMapping(lineItemID, creativeID int) {
 	}
 }
 
-func AddCSIGLIMapping(key string, lineitemID int) {
-	values := csigLineItemMap[key]
-	values = append(values, lineitemID)
-	csigLineItemMap[key] = values
-}
-
 func UnmapLineItemCreativeMapping(lineItemID, creativeID int) {
 	if li, ok := lineItemMap[lineItemID]; ok {
 		for index, id := range li.Creatives {
@@ -42,6 +37,13 @@ func UnmapLineItemCreativeMapping(lineItemID, creativeID int) {
 			}
 		}
 	}
+}
+
+/*
+func AddCSIGLIMapping(key string, lineitemID int) {
+	values := csigLineItemMap[key]
+	values = append(values, lineitemID)
+	csigLineItemMap[key] = values
 }
 
 func UnmapCSIGLIMapping(key string, lineItemID int) {
@@ -58,6 +60,7 @@ func UnmapCSIGLIMapping(key string, lineItemID int) {
 		}
 	}
 }
+*/
 
 func FlushAll() {
 	Initialise()
