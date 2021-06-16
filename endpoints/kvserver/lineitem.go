@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 )
 
 const (
@@ -27,20 +29,20 @@ type ImpCount struct {
 }
 
 type LineItem struct {
-	ID        int       `json:"id,omitempty"`
-	Type      int       `json:"type,omitempty"`
-	Price     float64   `json:"price,omitempty"`
-	Source    string    `json:"source,omitempty"`
-	FCap      string    `json:"fcap,omitempty"`
-	StartDate time.Time `json:"startdate,omitempty"`
-	EndDate   time.Time `json:"enddate,omitempty"`
-	Goal      int       `json:"goal,omitempty"`
-	Device    string    `json:"device,omitempty"`
-	OS        string    `json:"os,omitempty"`
-	IG        string    `json:"ig,omitempty"`
-	RegExKey  string    `json:"targetings,omitempty"`
-	Pacing    int       `json:"pacing,omitempty"`
-	Creatives []int     `json:"creatives,omitempty"`
+	ID        int       `json:"id"`
+	Type      int       `json:"type"`
+	Price     float64   `json:"price"`
+	Source    string    `json:"source"`
+	FCap      string    `json:"fcap"`
+	StartDate time.Time `json:"startdate"`
+	EndDate   time.Time `json:"enddate"`
+	Goal      int       `json:"goal"`
+	Device    string    `json:"device"`
+	OS        string    `json:"os"`
+	IG        string    `json:"ig"`
+	RegExKey  string    `json:"targetings"`
+	Pacing    int       `json:"pacing"`
+	Creatives []int     `json:"creatives"`
 
 	//pacing calculations
 	RegExpression []*regexp.Regexp `json:"-"`
@@ -151,8 +153,9 @@ func getkey(value string) string {
 
 func (l *LineItem) calculateGoal() {
 	daysRemaining := int(l.EndDate.Sub(l.CurrentDate).Hours()/24) + 1
-	remainingGoal := l.Goal - l.Impressions.Total
+	remainingGoal := l.Goal - l.Winning.Total
 	l.DailyGoal = remainingGoal / daysRemaining
+	logger.Debug("daily goal li:%v goal:%v daysremaining:%v winning:%v dailygoal:%v", l.ID, l.Goal, daysRemaining, l.Winning.Total, l.DailyGoal)
 }
 
 func (l *LineItem) caluclatePacingRate() {
@@ -168,7 +171,9 @@ func (l *LineItem) caluclatePacingRate() {
 	}
 
 	l.calculateGoal()
-	slotGoal := (l.DailyGoal - l.Impressions.Today) / todaySlotsRemaining
+	slotGoal := (l.DailyGoal - l.Winning.Today) / todaySlotsRemaining
+
+	logger.Debug("calculate pacing li:%v daysremaining:%v todaysSlotsRemaining:%v slotGoal:%v dailygoal:%v winningToday:%v", l.ID, daysRemaining, todaySlotsRemaining, slotGoal, l.DailyGoal, l.Winning.Today)
 
 	l.Pacing = 1
 	if slotGoal > 0 && l.Impressions.Slot > 0 {
@@ -178,6 +183,7 @@ func (l *LineItem) caluclatePacingRate() {
 	if l.Pacing <= 0 {
 		l.Pacing = 1
 	}
+	logger.Debug("calculate pacing li:%v pacing:%v l.Impression.Slot:%v slotGoal:%v", l.ID, l.Pacing, l.Impressions.Slot, slotGoal)
 }
 
 func (l *LineItem) getPacingRate(csigSlotImpression int) int {

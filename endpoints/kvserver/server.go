@@ -231,12 +231,13 @@ func kv_update_ic(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		}
 		]
 	*/
-	logger.Debug("Update LineItem Analytics Numbers")
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		default_error_response(w, r, err)
 	}
 	r.Body.Close()
+
+	logger.Debug("Update LineItem Analytics Numbers: %v", string(body))
 
 	type temp struct {
 		LineItemID   int `json:"auc_lineitem_id,omitempty"`
@@ -244,7 +245,7 @@ func kv_update_ic(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		WinningCount int `json:"winning_imp_count,omitempty"`
 	}
 	result := []temp{}
-	if err := json.Unmarshal(body, result); nil != err {
+	if err := json.Unmarshal(body, &result); nil != err {
 		default_error_response(w, r, err)
 	}
 
