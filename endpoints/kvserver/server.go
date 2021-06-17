@@ -59,7 +59,7 @@ func success_response(w http.ResponseWriter, r *http.Request, response string) {
 
 //lineitems
 func kv_add_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	logger.Debug("Adding new lineitem")
+	logger.Debug("Adding new lineitem: %v", r.URL.RawQuery)
 
 	li, err := NewLineItem(
 		GetInt(r.FormValue("id")),
@@ -86,6 +86,7 @@ func kv_add_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	success_response(w, r, SUCCESS)
 }
 func kv_list_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logger.Debug("list lineitem: %v", r.URL.RawQuery)
 	var response []byte
 	if len(r.FormValue("id")) == 0 {
 		response, _ = json.Marshal(lineItemMap)
@@ -104,7 +105,7 @@ func kv_list_lineitem(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 //creatives
 func kv_add_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	logger.Debug("Adding new creative")
+	logger.Debug("Adding new creative: %v", r.URL.RawQuery)
 
 	cr, err := NewCreative(
 		GetInt(r.FormValue("id")),
@@ -119,6 +120,7 @@ func kv_add_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	success_response(w, r, SUCCESS)
 }
 func kv_list_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logger.Debug("list creatives: %v", r.URL.RawQuery)
 	var response []byte
 	if len(r.FormValue("id")) == 0 {
 		response, _ = json.Marshal(creativeMap)
@@ -137,7 +139,7 @@ func kv_list_creative(w http.ResponseWriter, r *http.Request, ps httprouter.Para
 
 //lineitem_creative_mapping
 func kv_add_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	logger.Debug("Mapping new lineitem creative mapping")
+	logger.Debug("Mapping new lineitem creative mapping:%v", r.URL.RawQuery)
 	liid := GetInt(r.FormValue("liid"))
 	creatives := strings.Split(r.FormValue("crid"), ",")
 
@@ -156,7 +158,7 @@ func kv_add_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	success_response(w, r, SUCCESS)
 }
 func kv_del_licr(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	logger.Debug("Unmapping new lineitem creative mapping")
+	logger.Debug("Unmapping new lineitem creative mapping:%v", r.URL.RawQuery)
 	liid := GetInt(r.FormValue("liid"))
 	creatives := strings.Split(r.FormValue("crid"), ",")
 
@@ -205,6 +207,7 @@ func kv_add_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 */
 func kv_get_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	logger.Debug("get csig: %v", r.URL.RawQuery)
 	key := r.FormValue("key")
 	if len(key) == 0 {
 		default_error_response(w, r, fmt.Errorf("key not present"))
