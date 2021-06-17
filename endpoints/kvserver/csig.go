@@ -14,14 +14,16 @@ func GetResult(key string) *Result {
 	}
 	subKeys := strings.Split(key, ":")
 	for _, li := range lineItemMap {
-		if len(li.RegExpression) != len(subKeys) {
-			continue
-		}
 		found := true
-		for index, subKey := range subKeys {
-			found = found && li.RegExpression[index].Match([]byte(subKey))
-			if found == false {
-				break
+		if len(key) > 0 {
+			if len(li.RegExpression) != len(subKeys) {
+				continue
+			}
+			for index, subKey := range subKeys {
+				found = found && li.RegExpression[index].Match([]byte(subKey))
+				if found == false {
+					break
+				}
 			}
 		}
 		if found {

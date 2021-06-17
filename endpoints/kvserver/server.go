@@ -209,10 +209,6 @@ func kv_add_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func kv_get_csig(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	logger.Debug("get csig: %v", r.URL.RawQuery)
 	key := r.FormValue("key")
-	if len(key) == 0 {
-		default_error_response(w, r, fmt.Errorf("key not present"))
-	}
-
 	result := GetResult(key)
 	response, _ := json.Marshal(result)
 	success_response(w, r, string(response))
