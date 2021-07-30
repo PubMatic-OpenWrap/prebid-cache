@@ -16,7 +16,7 @@ import (
 	log "github.com/PubMatic-OpenWrap/prebid-cache/logger"
 	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 	"github.com/julienschmidt/httprouter"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // PutHandler serves "POST /cache" requests.
@@ -96,7 +96,12 @@ func NewPutHandler(backend backends.Backend, maxNumValues int) func(http.Respons
 
 			logger.Debug("Storing value: %s", toCache)
 
-			resps.Responses[i].UUID = uuid.NewV4().String()
+			if len(p.UUID) > 0 {
+				resps.Responses[i].UUID = p.UUID
+			} else {
+				resps.Responses[i].UUID = uuid.NewV4().String()
+			}
+
 			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 			defer cancel()
 			backendStartTime := time.Now()
@@ -167,6 +172,7 @@ type PutRequest struct {
 type PutObject struct {
 	Type  string          `json:"type"`
 	Value json.RawMessage `json:"value"`
+	UUID  string          `json:"uuid,omitempty"`
 }
 
 type PutResponseObject struct {
