@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -73,11 +72,14 @@ func parseUUID(r *http.Request) (string, error) {
 	if id == "" {
 		err = errors.New("Missing required parameter uuid")
 		stats.LogCacheFailedGetStats(constant.UUIDMissing)
-	} else if len(id) != 36 {
-		// UUIDs are 36 characters long... so this quick check lets us filter out most invalid
-		// ones before even checking the backend.
-		err = fmt.Errorf("No content stored for uuid=%s", id)
-		stats.LogCacheFailedGetStats(constant.InvalidUUID)
 	}
+	/*
+		else if len(id) != 36 {
+			// UUIDs are 36 characters long... so this quick check lets us filter out most invalid
+			// ones before even checking the backend.
+			err = fmt.Errorf("No content stored for uuid=%s", id)
+			stats.LogCacheFailedGetStats(constant.InvalidUUID)
+		}
+	*/
 	return id, err
 }
