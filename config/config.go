@@ -2,11 +2,11 @@ package config
 
 import (
 	"os"
-	"prebid-cache/constant"
 	"strings"
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
 	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 	"github.com/spf13/viper"
 )
