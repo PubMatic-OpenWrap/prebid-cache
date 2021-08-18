@@ -2,9 +2,10 @@ package config
 
 import (
 	"os"
-	"prebid-cache/constant"
 	"strings"
 	"testing"
+
+	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
 
 	"github.com/spf13/viper"
 	//"github.com/stretchr/testify/assert"
