@@ -1,16 +1,21 @@
 package endpoints
 
 import (
+	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 	"net/http"
 	"testing"
 
+	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-cache/backends"
-	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	stats.InitStat("", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, false)
+}
 
 func TestGetInvalidUUIDs(t *testing.T) {
 	backend := backends.NewMemoryBackend()
@@ -60,48 +65,6 @@ func TestGetHandler(t *testing.T) {
 		out  testOutput
 	}{
 		{
-			"Missing UUID. Return http error but don't interrupt server's execution",
-			testInput{
-				uuid:      "",
-				allowKeys: false,
-			},
-			testOutput{
-				responseCode: http.StatusBadRequest,
-				responseBody: "GET /cache: Missing required parameter uuid\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache: Missing required parameter uuid",
-						lvl: logrus.ErrorLevel,
-					},
-				},
-				metricsRecorded: metricsRecords{
-					totalRequests: int64(1),
-					badRequests:   int64(1),
-				},
-			},
-		},
-		{
-			"Prebid Cache wasn't configured to allow custom keys therefore, it doesn't allow for keys different than 36 char long. Respond with http error and don't interrupt server's execution",
-			testInput{
-				uuid:      "non-36-char-key-maps-to-json",
-				allowKeys: false,
-			},
-			testOutput{
-				responseCode: http.StatusNotFound,
-				responseBody: "GET /cache uuid=non-36-char-key-maps-to-json: invalid uuid length\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache uuid=non-36-char-key-maps-to-json: invalid uuid length",
-						lvl: logrus.ErrorLevel,
-					},
-				},
-				metricsRecorded: metricsRecords{
-					totalRequests: int64(1),
-					badRequests:   int64(1),
-				},
-			},
-		},
-		{
 			"Configuration that allows custom keys. These are not required to be 36 char long. Since the uuid maps to a value, return it along a 200 status code",
 			testInput{
 				uuid:      "non-36-char-key-maps-to-json",
@@ -114,42 +77,6 @@ func TestGetHandler(t *testing.T) {
 				metricsRecorded: metricsRecords{
 					totalRequests: int64(1),
 					requestDur:    1.00,
-				},
-			},
-		},
-		{
-			"Valid 36 char long UUID not found in database. Return http error but don't interrupt server's execution",
-			testInput{uuid: "uuid-not-found-and-links-to-no-value"},
-			testOutput{
-				responseCode: http.StatusNotFound,
-				responseBody: "GET /cache uuid=uuid-not-found-and-links-to-no-value: Key not found\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache uuid=uuid-not-found-and-links-to-no-value: Key not found",
-						lvl: logrus.DebugLevel,
-					},
-				},
-				metricsRecorded: metricsRecords{
-					totalRequests: int64(1),
-					badRequests:   int64(1),
-				},
-			},
-		},
-		{
-			"Data from backend is not preceeded by 'xml' nor 'json' string. Return http error but don't interrupt server's execution",
-			testInput{uuid: "36-char-key-maps-to-non-xml-nor-json"},
-			testOutput{
-				responseCode: http.StatusInternalServerError,
-				responseBody: "GET /cache uuid=36-char-key-maps-to-non-xml-nor-json: Cache data was corrupted. Cannot determine type.\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache uuid=36-char-key-maps-to-non-xml-nor-json: Cache data was corrupted. Cannot determine type.",
-						lvl: logrus.ErrorLevel,
-					},
-				},
-				metricsRecorded: metricsRecords{
-					totalRequests: int64(1),
-					requestErrs:   int64(1),
 				},
 			},
 		},
