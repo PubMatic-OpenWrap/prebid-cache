@@ -6,7 +6,6 @@ replace github.com/bradfitz/gomemcache => github.com/google/gomemcache v0.0.0-20
 
 require (
 	git.pubmatic.com/PubMatic/go-common.git v0.0.0-20211116062746-840b999f668b
-	github.com/BurntSushi/toml v0.4.1 // indirect
 	github.com/aerospike/aerospike-client-go v4.0.0+incompatible
 	github.com/bitly/go-hostpool v0.1.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
@@ -23,9 +22,9 @@ require (
 	github.com/magiconair/properties v1.8.0 // indirect
 	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
-	github.com/onsi/gomega v1.17.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
+	github.com/prebid/prebid-cache v0.0.0-20220302220808-955b74c1a07e
 	github.com/prometheus/client_golang v1.5.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/rcrowley/go-metrics v0.0.0-20180503174638-e2704e165165

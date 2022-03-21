@@ -7,7 +7,6 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
 	"github.com/PubMatic-OpenWrap/prebid-cache/config"
 	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints"
-	"github.com/PubMatic-OpenWrap/prebid-cache/endpoints/decorators"
 	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
@@ -35,13 +34,13 @@ func NewPublicHandler(cfg config.Configuration, dataStore backends.Backend, appM
 }
 
 func addReadRoutes(cfg config.Configuration, dataStore backends.Backend, appMetrics *metrics.Metrics, router *httprouter.Router) {
-	router.GET("/", endpoints.NewIndexHandler(cfg.IndexResponse)) //Default route handler
+	router.GET("/", endpoints.NewIndexHandler(cfg.IndexResponse)) // Default route handler
 	router.GET("/status", endpoints.Status)                       // Determines whether the server is ready for more traffic.
-	router.GET("/cache", decorators.MonitorHttp(endpoints.NewGetHandler(dataStore, cfg.RequestLimits.AllowSettingKeys), appMetrics, decorators.GetMethod))
+	router.GET("/cache", endpoints.NewGetHandler(dataStore, appMetrics, cfg.RequestLimits.AllowSettingKeys))
 }
 
 func addWriteRoutes(cfg config.Configuration, dataStore backends.Backend, appMetrics *metrics.Metrics, router *httprouter.Router) {
-	router.POST("/cache", decorators.MonitorHttp(endpoints.NewPutHandler(dataStore, cfg.RequestLimits.MaxNumValues, cfg.RequestLimits.AllowSettingKeys), appMetrics, decorators.PostMethod))
+	router.POST("/cache", endpoints.NewPutHandler(dataStore, appMetrics, cfg.RequestLimits.MaxNumValues, cfg.RequestLimits.AllowSettingKeys))
 }
 
 func handleCors(handler http.Handler) http.Handler {

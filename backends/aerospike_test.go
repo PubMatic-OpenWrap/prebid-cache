@@ -8,10 +8,11 @@ import (
 	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
 	as "github.com/aerospike/aerospike-client-go"
 	as_types "github.com/aerospike/aerospike-client-go/types"
+	"github.com/prebid/prebid-cache/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFormatAerospikeError(t *testing.T) {
+func TestClassifyAerospikeError(t *testing.T) {
 	testCases := []struct {
 		desc        string
 		inErr       error
@@ -23,29 +24,24 @@ func TestFormatAerospikeError(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			desc:        "Non-nil error, print without a caller",
+			desc:        "Generic non-nil error, expect same error in output",
 			inErr:       fmt.Errorf("client.Get returned nil record"),
 			expectedErr: fmt.Errorf("client.Get returned nil record"),
 		},
 		{
-			desc:        "Non-nil error, comes with a caller",
-			inErr:       fmt.Errorf("client.Get returned nil record"),
-			expectedErr: fmt.Errorf("client.Get returned nil record"),
-		},
-		{
-			desc:        "Non-nil error, comes with more than one callers",
-			inErr:       fmt.Errorf("client.Get returned nil record"),
-			expectedErr: fmt.Errorf("client.Get returned nil record"),
-		},
-		{
-			desc:        "Aerospike error, comes with a caller",
+			desc:        "Aerospike error is neither KEY_NOT_FOUND_ERROR nor KEY_EXISTS_ERROR, expect same error as output",
 			inErr:       as_types.NewAerospikeError(as_types.SERVER_NOT_AVAILABLE),
-			expectedErr: fmt.Errorf("Server is not accepting requests."),
+			expectedErr: as_types.NewAerospikeError(as_types.SERVER_NOT_AVAILABLE),
 		},
 		{
-			desc:        "Aerospike KEY_NOT_FOUND_ERROR error, attach our GetKeyNotFound constant",
+			desc:        "Aerospike KEY_NOT_FOUND_ERROR error, expect Prebid Cache's KEY_NOT_FOUND error",
 			inErr:       as_types.NewAerospikeError(as_types.KEY_NOT_FOUND_ERROR),
-			expectedErr: fmt.Errorf("Key not found"),
+			expectedErr: utils.NewPBCError(utils.KEY_NOT_FOUND),
+		},
+		{
+			desc:        "Aerospike KEY_EXISTS_ERROR error, expect Prebid Cache's RECORD_EXISTS error",
+			inErr:       as_types.NewAerospikeError(as_types.KEY_EXISTS_ERROR),
+			expectedErr: utils.NewPBCError(utils.RECORD_EXISTS),
 		},
 	}
 	for _, test := range testCases {
@@ -58,7 +54,7 @@ func TestFormatAerospikeError(t *testing.T) {
 	}
 }
 
-func TestClientGet(t *testing.T) {
+func TestAerospikeClientGet(t *testing.T) {
 	aerospikeBackend := &AerospikeBackend{
 		metrics: metricstest.CreateMockMetrics(),
 	}
@@ -203,7 +199,7 @@ type errorProneAerospikeClient struct {
 	errorThrowingFunction string
 }
 
-func (c *errorProneAerospikeClient) NewUuidKey(namespace string, key string) (*as.Key, error) {
+func (c *errorProneAerospikeClient) NewUUIDKey(namespace string, key string) (*as.Key, error) {
 	if c.errorThrowingFunction == "TEST_KEY_GEN_ERROR" {
 		return nil, as_types.NewAerospikeError(as_types.NOT_AUTHENTICATED)
 	}
@@ -255,6 +251,6 @@ func (c *goodAerospikeClient) Put(policy *as.WritePolicy, aeKey *as.Key, binMap 
 	return as_types.NewAerospikeError(as_types.KEY_MISMATCH)
 }
 
-func (c *goodAerospikeClient) NewUuidKey(namespace string, key string) (*as.Key, error) {
+func (c *goodAerospikeClient) NewUUIDKey(namespace string, key string) (*as.Key, error) {
 	return as.NewKey(namespace, setName, key)
 }
