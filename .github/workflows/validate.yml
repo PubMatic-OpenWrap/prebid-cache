@@ -19,6 +19,15 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
 
+    - name: Set PubMatic enterprise GitHub User
+      uses: oleksiyrudenko/gha-git-credentials@v2.1
+      with:
+        global: true
+        name: 'pm-openwrap-cicd'
+        email: 'pm-openwrap-cicd@pubmatic.com'
+        actor: 'pm-openwrap-cicd'
+        token: '${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}'
+
     - name: Checkout Branch
       uses: actions/checkout@v2
       with:
@@ -31,3 +40,4 @@ jobs:
         ./validate.sh --nofmt
       env:
         GO111MODULE: "on"
+        GOPRIVATE: "git.pubmatic.com/PubMatic/*"
