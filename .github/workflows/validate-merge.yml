@@ -17,18 +17,12 @@ jobs:
     - name: Checkout Merged Branch
       uses: actions/checkout@v2
 
-    - name: Set PubMatic enterprise GitHub User
-      uses: oleksiyrudenko/gha-git-credentials@v2.1
-      with:
-        global: true
-        name: 'pm-openwrap-cicd'
-        email: 'pm-openwrap-cicd@pubmatic.com'
-        actor: 'pm-openwrap-cicd'
-        token: '${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}'
-
     - name: Validate
       run: |
+        git config --global url."https://${USERNAME}:${TOKEN}@git.pubmatic.com".insteadOf "https://git.pubmatic.com"
         ./validate.sh --nofmt
       env:
         GO111MODULE: "on"
         GOPRIVATE: "git.pubmatic.com/PubMatic/*"
+        TOKEN: ${{ secrets.PM_OPENWRAP_CICD_PASSWORD }}
+        USERNAME: ${{ secrets.PM_OPENWRAP_CICD_USERNAME }}
