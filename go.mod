@@ -4,8 +4,11 @@ go 1.13
 
 replace github.com/bradfitz/gomemcache => github.com/google/gomemcache v0.0.0-20200326162346-94281991662a
 
+replace github.com/prebid/prebid-cache => ./
+
 require (
 	git.pubmatic.com/PubMatic/go-common.git v0.0.0-20211116062746-840b999f668b
+	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/aerospike/aerospike-client-go v4.0.0+incompatible
 	github.com/bitly/go-hostpool v0.1.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect

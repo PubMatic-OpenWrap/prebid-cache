@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
 	as "github.com/aerospike/aerospike-client-go"
 	as_types "github.com/aerospike/aerospike-client-go/types"
+	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/prebid/prebid-cache/utils"
 	"github.com/stretchr/testify/assert"
 )

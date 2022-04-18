@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
+	"github.com/prebid/prebid-cache/utils"
 	"github.com/stretchr/testify/assert"
 )
 

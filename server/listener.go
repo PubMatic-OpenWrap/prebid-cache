@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/metrics"
 )
 
 // monitorableListener tracks any opened connections in the metrics.

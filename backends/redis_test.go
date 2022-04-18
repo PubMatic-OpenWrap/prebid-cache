@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
 	"github.com/go-redis/redis"
+	"github.com/prebid/prebid-cache/utils"
 	"github.com/stretchr/testify/assert"
 )
 

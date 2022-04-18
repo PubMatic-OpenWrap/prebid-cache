@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
+	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/stretchr/testify/assert"
 )
 

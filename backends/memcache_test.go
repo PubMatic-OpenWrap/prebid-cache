@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/prebid/prebid-cache/utils"
 	"github.com/stretchr/testify/assert"
 )
 

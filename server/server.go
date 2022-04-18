@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
-	localprometheus "github.com/PubMatic-OpenWrap/prebid-cache/metrics/prometheus"
+	"github.com/prebid/prebid-cache/config"
+	"github.com/prebid/prebid-cache/metrics"
+	localprometheus "github.com/prebid/prebid-cache/metrics/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

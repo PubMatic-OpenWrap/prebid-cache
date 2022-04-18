@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/stretchr/testify/assert"
 )
 

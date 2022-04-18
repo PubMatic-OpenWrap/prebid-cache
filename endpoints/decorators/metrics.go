@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-cache/metrics"
 )
 
 const (

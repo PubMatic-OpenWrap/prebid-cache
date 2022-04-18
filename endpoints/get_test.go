@@ -1,13 +1,14 @@
 package endpoints
 
 import (
-	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
 	"net/http"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
+	"github.com/prebid/prebid-cache/stats"
+
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends/decorators"
+	"github.com/prebid/prebid-cache/backends/decorators"
 )
 
 func TestExcessiveTTL(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
+	"github.com/prebid/prebid-cache/config"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

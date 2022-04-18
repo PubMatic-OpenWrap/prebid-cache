@@ -3,7 +3,7 @@ package decorators
 import (
 	"context"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/backends"
 )
 
 // LimitTTLs wraps the delegate and makes sure that it never gets TTLs which exceed the max.

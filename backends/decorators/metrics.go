@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
+	"github.com/prebid/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 type backendWithMetrics struct {

@@ -3,9 +3,9 @@ package metrics
 import (
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	influx "github.com/PubMatic-OpenWrap/prebid-cache/metrics/influx"
-	prometheus "github.com/PubMatic-OpenWrap/prebid-cache/metrics/prometheus"
+	"github.com/prebid/prebid-cache/config"
+	influx "github.com/prebid/prebid-cache/metrics/influx"
+	prometheus "github.com/prebid/prebid-cache/metrics/prometheus"
 )
 
 // Metrics provides access to metric engines.

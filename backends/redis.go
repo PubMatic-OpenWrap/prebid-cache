@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
 	"github.com/go-redis/redis"
+	"github.com/prebid/prebid-cache/config"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 // RedisDB is an interface that helps us communicate with an instance of a

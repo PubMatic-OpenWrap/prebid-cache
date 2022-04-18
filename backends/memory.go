@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 // MemoryBackend stores information in the local memory heap. Stored data dissapears upon

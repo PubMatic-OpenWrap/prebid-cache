@@ -2,9 +2,10 @@ package stats
 
 import (
 	"fmt"
+
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"git.pubmatic.com/PubMatic/go-common.git/tcpstats"
-	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
+	"github.com/prebid/prebid-cache/constant"
 )
 
 type statsTCP struct {

@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"strconv"
+
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"github.com/prebid/prebid-cache/config"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func newPrometheusServer(cfg *config.Configuration, promRegistry *prometheus.Registry) *http.Server {

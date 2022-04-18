@@ -4,18 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
-	backendDecorators "github.com/PubMatic-OpenWrap/prebid-cache/backends/decorators"
-	"github.com/PubMatic-OpenWrap/prebid-cache/constant"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
-	"github.com/julienschmidt/httprouter"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"time"
+
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-cache/backends"
+	backendDecorators "github.com/prebid/prebid-cache/backends/decorators"
+	"github.com/prebid/prebid-cache/constant"
+	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/stats"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 // PutHandler serves "POST /cache" requests.

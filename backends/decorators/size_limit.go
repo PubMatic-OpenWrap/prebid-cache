@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/backends"
 )
 
 // EnforceSizeLimit rejects payloads over a max size.

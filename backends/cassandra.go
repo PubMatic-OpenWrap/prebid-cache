@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
 	"github.com/gocql/gocql"
+	"github.com/prebid/prebid-cache/config"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 // CassandraDB is an interface that helps us communicate with a cassandra storage service

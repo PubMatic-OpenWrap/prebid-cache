@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
-	"github.com/PubMatic-OpenWrap/prebid-cache/stats"
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
 	as "github.com/aerospike/aerospike-client-go"
 	as_types "github.com/aerospike/aerospike-client-go/types"
+	"github.com/prebid/prebid-cache/config"
+	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/stats"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 const setName = "uuid"

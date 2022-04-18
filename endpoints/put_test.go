@@ -14,11 +14,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
-	backendDecorators "github.com/PubMatic-OpenWrap/prebid-cache/backends/decorators"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics/metricstest"
-	"github.com/PubMatic-OpenWrap/prebid-cache/utils"
 	"github.com/julienschmidt/httprouter"
+	"github.com/prebid/prebid-cache/backends"
+	backendDecorators "github.com/prebid/prebid-cache/backends/decorators"
+	"github.com/prebid/prebid-cache/metrics/metricstest"
+	"github.com/prebid/prebid-cache/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

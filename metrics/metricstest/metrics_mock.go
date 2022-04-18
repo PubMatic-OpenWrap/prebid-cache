@@ -3,8 +3,8 @@ package metricstest
 import (
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/config"
+	"github.com/prebid/prebid-cache/metrics"
 )
 
 const mockDuration time.Duration = time.Second
