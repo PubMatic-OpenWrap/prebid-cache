@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/config"
+	"github.com/prebid/prebid-cache/config"
 )
 
 func TestNewAdminServer(t *testing.T) {
@@ -13,7 +13,7 @@ func TestNewAdminServer(t *testing.T) {
 		Port:      8000,
 		AdminPort: 6060,
 	}
-	server := newAdminServer(cfg)
+	server := newAdminServer(cfg, http.HandlerFunc(handler))
 	if server.Addr != ":6060" {
 		t.Errorf("Admin server address should be %s. Got %s", ":6060", server.Addr)
 	}

@@ -5,51 +5,64 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PubMatic-OpenWrap/prebid-cache/backends"
-	"github.com/PubMatic-OpenWrap/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 type backendWithMetrics struct {
 	delegate backends.Backend
-	puts     *metrics.MetricsEntryByFormat
-	gets     *metrics.MetricsEntry
+	metrics  *metrics.Metrics
 }
 
 func (b *backendWithMetrics) Get(ctx context.Context, key string) (string, error) {
-	b.gets.Request.Mark(1)
+
+	b.metrics.RecordGetBackendTotal()
 	start := time.Now()
 	val, err := b.delegate.Get(ctx, key)
 	if err == nil {
-		b.gets.Duration.UpdateSince(start)
+		b.metrics.RecordGetBackendDuration(time.Since(start))
 	} else {
-		b.gets.Errors.Mark(1)
+		if pbcErr, isPBCErr := err.(utils.PBCError); isPBCErr {
+			// If error Type is either KEY_NOT_FOUND or MISSING_KEY, account under the
+			// metrics below in addition of RecordGetBackendError()
+			switch pbcErr.Type {
+			case utils.KEY_NOT_FOUND:
+				b.metrics.RecordKeyNotFoundError()
+			case utils.MISSING_KEY:
+				b.metrics.RecordMissingKeyError()
+			}
+		}
+		b.metrics.RecordGetBackendError()
 	}
 	return val, err
 }
 
-func (b *backendWithMetrics) Put(ctx context.Context, key string, value string) error {
+func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+
 	if strings.HasPrefix(value, backends.XML_PREFIX) {
-		b.puts.XmlRequest.Mark(1)
+		b.metrics.RecordPutBackendXml()
 	} else if strings.HasPrefix(value, backends.JSON_PREFIX) {
-		b.puts.JsonRequest.Mark(1)
+		b.metrics.RecordPutBackendJson()
 	} else {
-		b.puts.InvalidRequest.Mark(1)
+		b.metrics.RecordPutBackendInvalid()
 	}
+	b.metrics.RecordPutBackendTTLSeconds(time.Duration(ttlSeconds) * time.Second)
+
 	start := time.Now()
-	err := b.delegate.Put(ctx, key, value)
+	err := b.delegate.Put(ctx, key, value, ttlSeconds)
 	if err == nil {
-		b.puts.Duration.UpdateSince(start)
+		b.metrics.RecordPutBackendDuration(time.Since(start))
 	} else {
-		b.puts.Errors.Mark(1)
+		b.metrics.RecordPutBackendError()
 	}
-	b.puts.RequestLength.Update(int64(len(value)))
+	b.metrics.RecordPutBackendSize(float64(len(value)))
 	return err
 }
 
 func LogMetrics(backend backends.Backend, m *metrics.Metrics) backends.Backend {
 	return &backendWithMetrics{
 		delegate: backend,
-		puts:     m.PutsBackend,
-		gets:     m.GetsBackend,
+		metrics:  m,
 	}
 }
