@@ -37,6 +37,7 @@ func addReadRoutes(cfg config.Configuration, dataStore backends.Backend, appMetr
 	router.GET("/", endpoints.NewIndexHandler(cfg.IndexResponse)) // Default route handler
 	router.GET("/status", endpoints.Status)                       // Determines whether the server is ready for more traffic.
 	router.GET("/cache", endpoints.NewGetHandler(dataStore, appMetrics, cfg.RequestLimits.AllowSettingKeys))
+	router.GET("/healthcheck", endpoints.HealthCheck) // Determines whether the server is up and running.
 }
 
 func addWriteRoutes(cfg config.Configuration, dataStore backends.Backend, appMetrics *metrics.Metrics, router *httprouter.Router) {
