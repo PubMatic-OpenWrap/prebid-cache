@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 )
 
 type Backend struct {
@@ -15,8 +15,8 @@ type Backend struct {
 }
 
 func (cfg *Backend) validateAndLog() error {
+	logger.Info("config.backend.type: %s", cfg.Type)
 
-	log.Infof("config.backend.type: %s", cfg.Type)
 	switch cfg.Type {
 	case BackendAerospike:
 		return cfg.Aerospike.validateAndLog()
@@ -31,7 +31,6 @@ func (cfg *Backend) validateAndLog() error {
 	default:
 		return fmt.Errorf(`invalid config.backend.type: %s. It must be "aerospike", "cassandra", "memcache", "redis", or "memory".`, cfg.Type)
 	}
-	return nil
 }
 
 type BackendType string
@@ -73,38 +72,38 @@ func (cfg *Aerospike) validateAndLog() error {
 		return fmt.Errorf("Cannot connect to Aerospike host at port %d", cfg.Port)
 	}
 
-	log.Infof("config.backend.aerospike.host: %s", cfg.Host)
-	log.Infof("config.backend.aerospike.hosts: %v", cfg.Hosts)
-	log.Infof("config.backend.aerospike.port: %d", cfg.Port)
-	log.Infof("config.backend.aerospike.namespace: %s", cfg.Namespace)
-	log.Infof("config.backend.aerospike.user: %s", cfg.User)
+	logger.Info("config.backend.aerospike.host: %s", cfg.Host)
+	logger.Info("config.backend.aerospike.hosts: %v", cfg.Hosts)
+	logger.Info("config.backend.aerospike.port: %d", cfg.Port)
+	logger.Info("config.backend.aerospike.namespace: %s", cfg.Namespace)
+	logger.Info("config.backend.aerospike.user: %s", cfg.User)
 
 	if cfg.DefaultTTLSecs > 0 {
-		log.Infof("config.backend.aerospike.default_ttl_seconds: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.DefaultTTLSecs)
+		logger.Info("config.backend.aerospike.default_ttl_seconds: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.DefaultTTLSecs)
 	}
 
 	if cfg.ConnIdleTimeoutSecs > 0 {
-		log.Infof("config.backend.aerospike.connection_idle_timeout_seconds: %d.", cfg.ConnIdleTimeoutSecs)
+		logger.Info("config.backend.aerospike.connection_idle_timeout_seconds: %d.", cfg.ConnIdleTimeoutSecs)
 	}
 
 	if cfg.MaxReadRetries < 2 {
-		log.Infof("config.backend.aerospike.max_read_retries value will default to 2")
+		logger.Info("config.backend.aerospike.max_read_retries value will default to 2")
 		cfg.MaxReadRetries = 2
 	} else if cfg.MaxReadRetries > 2 {
-		log.Infof("config.backend.aerospike.max_read_retries: %d.", cfg.MaxReadRetries)
+		logger.Info("config.backend.aerospike.max_read_retries: %d.", cfg.MaxReadRetries)
 	}
 
 	if cfg.MaxWriteRetries < 0 {
-		log.Infof("config.backend.aerospike.max_write_retries value cannot be negative and will default to 0")
+		logger.Info("config.backend.aerospike.max_write_retries value cannot be negative and will default to 0")
 		cfg.MaxWriteRetries = 0
 	} else if cfg.MaxWriteRetries > 0 {
-		log.Infof("config.backend.aerospike.max_write_retries: %d.", cfg.MaxWriteRetries)
+		logger.Info("config.backend.aerospike.max_write_retries: %d.", cfg.MaxWriteRetries)
 	}
 
 	if cfg.ConnQueueSize > 0 {
-		log.Infof("config.backend.aerospike.connection_queue_size: %d", cfg.ConnQueueSize)
+		logger.Info("config.backend.aerospike.connection_queue_size: %d", cfg.ConnQueueSize)
 	} else {
-		log.Infof("config.backend.aerospike.connection_queue_size value will default to 256")
+		logger.Info("config.backend.aerospike.connection_queue_size value will default to 256")
 	}
 
 	return nil
@@ -117,13 +116,13 @@ type Cassandra struct {
 }
 
 func (cfg *Cassandra) validateAndLog() error {
-	log.Infof("config.backend.cassandra.hosts: %s", cfg.Hosts)
-	log.Infof("config.backend.cassandra.keyspace: %s", cfg.Keyspace)
+	logger.Info("config.backend.cassandra.hosts: %s", cfg.Hosts)
+	logger.Info("config.backend.cassandra.keyspace: %s", cfg.Keyspace)
 	if cfg.DefaultTTL < 0 {
 		// Goes back to default if we are provided a negative value
 		cfg.DefaultTTL = 2400
 	}
-	log.Infof("config.backend.cassandra.default_ttl_seconds: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.DefaultTTL)
+	logger.Info("config.backend.cassandra.default_ttl_seconds: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.DefaultTTL)
 
 	return nil
 }
@@ -136,11 +135,11 @@ type Memcache struct {
 
 func (cfg *Memcache) validateAndLog() error {
 	if cfg.ConfigHost != "" {
-		log.Infof("Memcache client will run in auto discovery mode")
-		log.Infof("config.backend.memcache.config_host: %s", cfg.ConfigHost)
-		log.Infof("config.backend.memcache.poll_interval_seconds: %d", cfg.PollIntervalSeconds)
+		logger.Info("Memcache client will run in auto discovery mode")
+		logger.Info("config.backend.memcache.config_host: %s", cfg.ConfigHost)
+		logger.Info("config.backend.memcache.poll_interval_seconds: %d", cfg.PollIntervalSeconds)
 	} else {
-		log.Infof("config.backend.memcache.hosts: %v", cfg.Hosts)
+		logger.Info("config.backend.memcache.hosts: %v", cfg.Hosts)
 	}
 	return nil
 }
@@ -160,13 +159,13 @@ type RedisTLS struct {
 }
 
 func (cfg *Redis) validateAndLog() error {
-	log.Infof("config.backend.redis.host: %s", cfg.Host)
-	log.Infof("config.backend.redis.port: %d", cfg.Port)
-	log.Infof("config.backend.redis.db: %d", cfg.Db)
+	logger.Info("config.backend.redis.host: %s", cfg.Host)
+	logger.Info("config.backend.redis.port: %d", cfg.Port)
+	logger.Info("config.backend.redis.db: %d", cfg.Db)
 	if cfg.ExpirationMinutes > 0 {
-		log.Infof("config.backend.redis.expiration: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.ExpirationMinutes)
+		logger.Info("config.backend.redis.expiration: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.ExpirationMinutes)
 	}
-	log.Infof("config.backend.redis.tls.enabled: %t", cfg.TLS.Enabled)
-	log.Infof("config.backend.redis.tls.insecure_skip_verify: %t", cfg.TLS.InsecureSkipVerify)
+	logger.Info("config.backend.redis.tls.enabled: %t", cfg.TLS.Enabled)
+	logger.Info("config.backend.redis.tls.insecure_skip_verify: %t", cfg.TLS.InsecureSkipVerify)
 	return nil
 }

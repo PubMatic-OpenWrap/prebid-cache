@@ -1,10 +1,14 @@
 package config
 
 import (
+	"log"
+	"os"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"github.com/prebid/prebid-cache/constant"
+	"github.com/prebid/prebid-cache/stats"
 	"github.com/spf13/viper"
 
 	"github.com/prebid/prebid-cache/utils"
@@ -12,11 +16,8 @@ import (
 
 func NewConfig(filename string) Configuration {
 	v := viper.New()
-
 	setConfigDefaults(v)
-
 	setEnvVarsLookup(v)
-
 	setConfigFilePath(v, filename)
 
 	// Read configuration file
@@ -25,17 +26,32 @@ func NewConfig(filename string) Configuration {
 		// Make sure the configuration file was not defective
 		if _, fileNotFound := err.(viper.ConfigFileNotFoundError); fileNotFound {
 			// Config file not found. Just log at info level and start Prebid Cache with default values
-			log.Info("Configuration file not detected. Initializing with default values and environment variable overrides.")
+			logger.Info("Configuration file not detected. Initializing with default values and environment variable overrides.")
 		} else {
 			// Config file was found but was defective, Either `UnsupportedConfigError` or `ConfigParseError` was thrown
-			log.Fatalf("Configuration file could not be read: %v", err)
+			logger.Fatal("Configuration file could not be read: %v", err)
 		}
 	}
 
 	cfg := Configuration{}
 	if err := v.Unmarshal(&cfg); err != nil {
-		log.Fatalf("Failed to unmarshal config: %v", err)
+		logger.Fatal("Failed to unmarshal config: %v", err)
 	}
+
+	cfg.Server.ServerName = getHostName()
+
+	//Initialize Stats Server
+	stats.InitStat(cfg.Stats.StatsHost, cfg.Stats.StatsPort, cfg.Server.ServerName, cfg.Stats.StatsDCName,
+		cfg.Stats.PortTCP, cfg.Stats.PublishInterval, cfg.Stats.PublishThreshold, cfg.Stats.Retries, cfg.Stats.DialTimeout, cfg.Stats.KeepAliveDuration, cfg.Stats.MaxIdleConnections, cfg.Stats.MaxIdleConnectionsPerHost, cfg.Stats.UseTCP)
+
+	var logConf logger.LogConf
+	logConf.LogLevel = cfg.OWLog.LogLevel
+	logConf.LogPath = cfg.OWLog.LogPath
+	logConf.LogRotationTime = cfg.OWLog.LogRotationTime
+	logConf.MaxLogFiles = cfg.OWLog.MaxLogFiles
+	logConf.MaxLogSize = cfg.OWLog.MaxLogSize
+	//Initialize logger
+	logger.InitGlog(logConf)
 
 	return cfg
 }
@@ -116,24 +132,29 @@ type Configuration struct {
 	Compression    Compression   `mapstructure:"compression"`
 	Metrics        Metrics       `mapstructure:"metrics"`
 	Routes         Routes        `mapstructure:"routes"`
+	Stats          Stats         `mapstructure:"stats"`
+	Server         Server        `mapstructure:"server"`
+	OWLog          OWLog         `mapstructure:"ow_log"`
 }
 
 // ValidateAndLog validates the config, terminating the program on any errors.
 // It also logs the config values that it used.
 func (cfg *Configuration) ValidateAndLog() {
-
-	log.Infof("config.port: %d", cfg.Port)
-	log.Infof("config.admin_port: %d", cfg.AdminPort)
+	logger.Info("config.port: %d", cfg.Port)
+	logger.Info("config.admin_port: %d", cfg.AdminPort)
 	cfg.Log.validateAndLog()
 	cfg.RateLimiting.validateAndLog()
 	cfg.RequestLimits.validateAndLog()
 
 	if err := cfg.Backend.validateAndLog(); err != nil {
-		log.Fatalf("%s", err.Error())
+		logger.Fatal("%s", err.Error())
 	}
 
 	cfg.Compression.validateAndLog()
 	cfg.Metrics.validateAndLog()
+	cfg.Stats.validateAndLog()
+	cfg.Server.validateAndLog()
+	cfg.OWLog.validateAndLog()
 	cfg.Routes.validateAndLog()
 }
 
@@ -142,7 +163,7 @@ type Log struct {
 }
 
 func (cfg *Log) validateAndLog() {
-	log.Infof("config.log.level: %s", cfg.Level)
+	logger.Info("config.log.level: %s", cfg.Level)
 }
 
 type LogLevel string
@@ -163,8 +184,8 @@ type RateLimiting struct {
 }
 
 func (cfg *RateLimiting) validateAndLog() {
-	log.Infof("config.rate_limiter.enabled: %t", cfg.Enabled)
-	log.Infof("config.rate_limiter.num_requests: %d", cfg.MaxRequestsPerSecond)
+	logger.Info("config.rate_limiter.enabled: %t", cfg.Enabled)
+	logger.Info("config.rate_limiter.num_requests: %d", cfg.MaxRequestsPerSecond)
 }
 
 type RequestLimits struct {
@@ -175,24 +196,24 @@ type RequestLimits struct {
 }
 
 func (cfg *RequestLimits) validateAndLog() {
-	log.Infof("config.request_limits.allow_setting_keys: %v", cfg.AllowSettingKeys)
+	logger.Info("config.request_limits.allow_setting_keys: %v", cfg.AllowSettingKeys)
 
 	if cfg.MaxTTLSeconds >= 0 {
-		log.Infof("config.request_limits.max_ttl_seconds: %d", cfg.MaxTTLSeconds)
+		logger.Info("config.request_limits.max_ttl_seconds: %d", cfg.MaxTTLSeconds)
 	} else {
-		log.Fatalf("invalid config.request_limits.max_ttl_seconds: %d. Value cannot be negative.", cfg.MaxTTLSeconds)
+		logger.Fatal("invalid config.request_limits.max_ttl_seconds: %d. Value cannot be negative.", cfg.MaxTTLSeconds)
 	}
 
 	if cfg.MaxSize >= 0 {
-		log.Infof("config.request_limits.max_size_bytes: %d", cfg.MaxSize)
+		logger.Info("config.request_limits.max_size_bytes: %d", cfg.MaxSize)
 	} else {
-		log.Fatalf("invalid config.request_limits.max_size_bytes: %d. Value cannot be negative.", cfg.MaxSize)
+		logger.Fatal("invalid config.request_limits.max_size_bytes: %d. Value cannot be negative.", cfg.MaxSize)
 	}
 
 	if cfg.MaxNumValues >= 0 {
-		log.Infof("config.request_limits.max_num_values: %d", cfg.MaxNumValues)
+		logger.Info("config.request_limits.max_num_values: %d", cfg.MaxNumValues)
 	} else {
-		log.Fatalf("invalid config.request_limits.max_num_values: %d. Value cannot be negative.", cfg.MaxNumValues)
+		logger.Fatal("invalid config.request_limits.max_num_values: %d. Value cannot be negative.", cfg.MaxNumValues)
 	}
 }
 
@@ -205,9 +226,9 @@ func (cfg *Compression) validateAndLog() {
 	case CompressionNone:
 		fallthrough
 	case CompressionSnappy:
-		log.Infof("config.compression.type: %s", cfg.Type)
+		logger.Info("config.compression.type: %s", cfg.Type)
 	default:
-		log.Fatalf(`invalid config.compression.type: %s. It must be "none" or "snappy"`, cfg.Type)
+		logger.Fatal(`invalid config.compression.type: %s. It must be "none" or "snappy"`, cfg.Type)
 	}
 }
 
@@ -239,18 +260,18 @@ func (cfg *Metrics) validateAndLog() {
 	metricsEnabled := cfg.Influx.Enabled || cfg.Prometheus.Enabled
 	if cfg.Type == MetricsNone || cfg.Type == "" {
 		if !metricsEnabled {
-			log.Infof("Prebid Cache will run without metrics")
+			logger.Info("Prebid Cache will run without metrics")
 		}
 	} else if cfg.Type != MetricsInflux {
 		// Was any other metrics system besides "InfluxDB" or "Prometheus" specified in `cfg.Type`?
 		if metricsEnabled {
 			// Prometheus, Influx or both, are enabled. Log a message explaining that `prebid-cache` will
 			// continue with supported metrics and non-supported metrics will be disabled
-			log.Infof("Prebid Cache will run without unsupported metrics \"%s\".", cfg.Type)
+			logger.Info("Prebid Cache will run without unsupported metrics \"%s\".", cfg.Type)
 		} else {
 			// The only metrics engine specified in the configuration file is a non-supported
 			// metrics engine. We should log error and exit program
-			log.Fatalf("Metrics \"%s\" are not supported, exiting program.", cfg.Type)
+			logger.Fatal("Metrics \"%s\" are not supported, exiting program.", cfg.Type)
 		}
 	}
 }
@@ -275,20 +296,20 @@ type InfluxMetrics struct {
 func (influxMetricsConfig *InfluxMetrics) validateAndLog() {
 	// validate
 	if influxMetricsConfig.Host == "" {
-		log.Fatalf(`Despite being enabled, influx metrics came with no host info: config.metrics.influx.host = "".`)
+		logger.Fatal(`Despite being enabled, influx metrics came with no host info: config.metrics.influx.host = "".`)
 	}
 	if influxMetricsConfig.Database == "" {
-		log.Fatalf(`Despite being enabled, influx metrics came with no database info: config.metrics.influx.database = "".`)
+		logger.Fatal(`Despite being enabled, influx metrics came with no database info: config.metrics.influx.database = "".`)
 	}
 	if influxMetricsConfig.Measurement == "" {
 		log.Fatalf(`Despite being enabled, influx metrics came with no measurement info: config.metrics.influx.measurement = "".`)
 	}
 
 	// log
-	log.Infof("config.metrics.influx.host: %s", influxMetricsConfig.Host)
-	log.Infof("config.metrics.influx.database: %s", influxMetricsConfig.Database)
-	log.Infof("config.metrics.influx.measurement: %s", influxMetricsConfig.Measurement)
-	log.Infof("config.metrics.influx.align_timestamps: %v", influxMetricsConfig.AlignTimestamps)
+	logger.Info("config.metrics.influx.host: %s", influxMetricsConfig.Host)
+	logger.Info("config.metrics.influx.database: %s", influxMetricsConfig.Database)
+	logger.Info("config.metrics.influx.measurement: %s", influxMetricsConfig.Measurement)
+	logger.Info("config.metrics.influx.align_timestamps: %v", influxMetricsConfig.AlignTimestamps)
 }
 
 type PrometheusMetrics struct {
@@ -302,16 +323,16 @@ type PrometheusMetrics struct {
 // validateAndLog will error out when the value of port is 0
 func (promMetricsConfig *PrometheusMetrics) validateAndLog() {
 	if promMetricsConfig.Port == 0 {
-		log.Fatalf(`Despite being enabled, prometheus metrics came with an empty port number: config.metrics.prometheus.port = 0`)
+		logger.Fatal(`Despite being enabled, prometheus metrics came with an empty port number: config.metrics.prometheus.port = 0`)
 	}
 
-	log.Infof("config.metrics.prometheus.namespace: %s", promMetricsConfig.Namespace)
-	log.Infof("config.metrics.prometheus.subsystem: %s", promMetricsConfig.Subsystem)
-	log.Infof("config.metrics.prometheus.port: %d", promMetricsConfig.Port)
+	logger.Info("config.metrics.prometheus.namespace: %s", promMetricsConfig.Namespace)
+	logger.Info("config.metrics.prometheus.subsystem: %s", promMetricsConfig.Subsystem)
+	logger.Info("config.metrics.prometheus.port: %d", promMetricsConfig.Port)
 }
 
-func (m *PrometheusMetrics) Timeout() time.Duration {
-	return time.Duration(m.TimeoutMillisRaw) * time.Millisecond
+func (promMetricsConfig *PrometheusMetrics) Timeout() time.Duration {
+	return time.Duration(promMetricsConfig.TimeoutMillisRaw) * time.Millisecond
 }
 
 type Routes struct {
@@ -320,6 +341,93 @@ type Routes struct {
 
 func (cfg *Routes) validateAndLog() {
 	if !cfg.AllowPublicWrite {
-		log.Infof("Main server will only accept GET requests")
+		logger.Info("Main server will only accept GET requests")
 	}
+}
+
+type Stats struct {
+	StatsHost   string `mapstructure:"host"`
+	StatsPort   string `mapstructure:"port"`
+	StatsDCName string `mapstructure:"dc_name"`
+
+	PortTCP                   string `mapstructure:"port_tcp"`
+	PublishInterval           int    `mapstructure:"publish_interval"`
+	PublishThreshold          int    `mapstructure:"publish_threshold"`
+	Retries                   int    `mapstructure:"retries"`
+	DialTimeout               int    `mapstructure:"dial_timeout"`
+	KeepAliveDuration         int    `mapstructure:"keep_alive_duration"`
+	MaxIdleConnections        int    `mapstructure:"max_idle_connections"`
+	MaxIdleConnectionsPerHost int    `mapstructure:"max_idle_connections_per_host"`
+
+	UseTCP bool `mapstructure:"use_tcp"`
+}
+
+func (cfg *Stats) validateAndLog() {
+	logger.Info("config.stats.host: %s", cfg.StatsHost)
+	logger.Info("config.stats.port: %s", cfg.StatsPort)
+	logger.Info("config.stats.dc_name: %s", cfg.StatsDCName)
+
+	logger.Info("config.stats.port_tcp: %s", cfg.PortTCP)
+	logger.Info("config.stats.publisher_interval: %d", cfg.PublishInterval)
+	logger.Info("config.stats.publisher_threshold: %d", cfg.PublishThreshold)
+	logger.Info("config.stats.retries: %d", cfg.Retries)
+	logger.Info("config.stats.dial_timeout: %d", cfg.DialTimeout)
+	logger.Info("config.stats.keep_alive_duration: %d", cfg.KeepAliveDuration)
+	logger.Info("config.stats.max_idle_connections: %d", cfg.MaxIdleConnections)
+	logger.Info("config.stats.max_idle_connections_per_host: %d", cfg.MaxIdleConnectionsPerHost)
+
+	logger.Info("config.stats.use_tcp: %t", cfg.UseTCP)
+}
+
+type Server struct {
+	ServerPort string `mapstructure:"port"`
+	ServerName string `mapstructure:"name"`
+}
+
+func (cfg *Server) validateAndLog() {
+	logger.Info("config.server.port: %s", cfg.ServerPort)
+	logger.Info("config.server.name: %s", cfg.ServerName)
+}
+
+type OWLog struct {
+	LogLevel        logger.LogLevel `mapstructure:"level"`
+	LogPath         string          `mapstructure:"path"`
+	LogRotationTime time.Duration   `mapstructure:"rotation_time"`
+	MaxLogFiles     int             `mapstructure:"max_log_files"`
+	MaxLogSize      uint64          `mapstructure:"max_log_size"`
+}
+
+func (cfg *OWLog) validateAndLog() {
+	logger.Info("config.ow_log.level: %v", cfg.LogLevel)
+	logger.Info("config.ow_log.path: %s", cfg.LogPath)
+	logger.Info("config.ow_log.rotation_time: %v", cfg.LogRotationTime)
+	logger.Info("config.ow_log.max_log_files: %v", cfg.MaxLogFiles)
+	logger.Info("config.ow_log.max_log_size: %v", cfg.MaxLogSize)
+}
+
+// getHostName Generates server name from node and pod name in K8S  environment
+func getHostName() string {
+	var (
+		nodeName string
+		podName  string
+	)
+
+	if nodeName, _ = os.LookupEnv(constant.ENV_VAR_NODE_NAME); nodeName == "" {
+		nodeName = constant.DEFAULT_NODENAME
+		logger.Info("Node name not set. Using default name: '%s'", nodeName)
+	} else {
+		nodeName = strings.Split(nodeName, ".")[0]
+	}
+
+	if podName, _ = os.LookupEnv(constant.ENV_VAR_POD_NAME); podName == "" {
+		podName = constant.DEFAULT_PODNAME
+		logger.Info("Pod name not set. Using default name: '%s'", podName)
+	} else {
+		podName = strings.TrimPrefix(podName, "creativecache-")
+	}
+
+	serverName := nodeName + ":" + podName
+	logger.Info("Server name: '%s'", serverName)
+
+	return serverName
 }

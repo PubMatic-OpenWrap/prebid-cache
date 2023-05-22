@@ -7,11 +7,13 @@ import (
 	"strings"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/constant"
 	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/stats"
 	"github.com/prebid/prebid-cache/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 // GetHandler serves "GET /cache" requests.
@@ -39,6 +41,8 @@ func NewGetHandler(storage backends.Backend, metrics *metrics.Metrics, allowCust
 func (e *GetHandler) handle(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	e.metrics.RecordGetTotal()
 	start := time.Now()
+	logger.Info("Get /cache called")
+	stats.LogCacheRequestedGetStats()
 
 	uuid, parseErr := parseUUID(r, e.allowCustomKeys)
 	if parseErr != nil {
@@ -53,7 +57,10 @@ func (e *GetHandler) handle(w http.ResponseWriter, r *http.Request, ps httproute
 
 	storedData, err := e.backend.Get(ctx, uuid)
 	if err != nil {
+		stats.LogCacheMissStats()
+		logger.Info("Cache miss for uuid: %v", uuid)
 		e.handleException(w, uuid, err)
+		logger.Info("Total time for get: %v", time.Now().Sub(start))
 		return
 	}
 
@@ -63,6 +70,7 @@ func (e *GetHandler) handle(w http.ResponseWriter, r *http.Request, ps httproute
 	}
 
 	// successfully retrieved value under uuid from the backend storage
+	logger.Info("Total time for get: %v", time.Now().Sub(start))
 	e.metrics.RecordGetDuration(time.Since(start))
 	return
 }
@@ -72,11 +80,13 @@ func (e *GetHandler) handle(w http.ResponseWriter, r *http.Request, ps httproute
 func parseUUID(r *http.Request, allowCustomKeys bool) (string, error) {
 	uuid := r.URL.Query().Get("uuid")
 	if uuid == "" {
+		stats.LogCacheFailedGetStats(constant.UUIDMissing)
 		return "", utils.NewPBCError(utils.MISSING_KEY)
 	}
 	// UUIDs are 36 characters long... so this quick check lets us filter out most invalid
 	// ones before even checking the backend.
 	if len(uuid) != 36 && (!allowCustomKeys) {
+		stats.LogCacheFailedGetStats(constant.InvalidUUID)
 		return uuid, utils.NewPBCError(utils.KEY_LENGTH)
 	}
 	return uuid, nil
@@ -128,9 +138,9 @@ func (e *GetHandler) handleException(w http.ResponseWriter, uuid string, err err
 
 		// Determine log level
 		if isKeyNotFound {
-			log.Debug(errMsg)
+			logger.Debug(errMsg)
 		} else {
-			log.Error(errMsg)
+			logger.Error(errMsg)
 		}
 
 		// Write error response

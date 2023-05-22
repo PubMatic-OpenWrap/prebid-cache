@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/rcrowley/go-metrics"
-	"github.com/sirupsen/logrus"
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
 )
 
@@ -132,7 +132,8 @@ func CreateInfluxMetrics() *InfluxMetrics {
 
 // Export begins metric publishing services.
 func (m InfluxMetrics) Export(cfg config.Metrics) {
-	logrus.Infof("Metrics will be exported to Influx with host=%s, db=%s, username=%s", cfg.Influx.Host, cfg.Influx.Database, cfg.Influx.Username)
+
+	logger.Info("Metrics will be exported to Influx with host=%s, db=%s, username=%s", cfg.Influx.Host, cfg.Influx.Database, cfg.Influx.Username)
 	influxdb.InfluxDB(
 		m.Registry,
 		TenSeconds,

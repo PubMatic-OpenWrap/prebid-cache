@@ -4,8 +4,7 @@ import (
 	"context"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/prebid/prebid-cache/backends"
 	"github.com/prebid/prebid-cache/backends/decorators"
 	"github.com/prebid/prebid-cache/compression"
@@ -42,7 +41,7 @@ func applyCompression(cfg config.Compression, backend backends.Backend) backends
 	case config.CompressionSnappy:
 		return compression.SnappyCompress(backend)
 	default:
-		log.Fatalf("Unknown compression type: %s", cfg.Type)
+		logger.Fatal("Unknown compression type: %s", cfg.Type)
 	}
 
 	panic("Error applying compression. This shouldn't happen.")
@@ -64,7 +63,7 @@ func newBaseBackend(cfg config.Backend, appMetrics *metrics.Metrics) backends.Ba
 	case config.BackendRedis:
 		return backends.NewRedisBackend(cfg.Redis, ctx)
 	default:
-		log.Fatalf("Unknown backend type: %s", cfg.Type)
+		logger.Fatal("Unknown backend type: %s", cfg.Type)
 	}
 
 	panic("Error creating backend. This shouldn't happen.")

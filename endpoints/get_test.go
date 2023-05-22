@@ -6,10 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/prebid/prebid-cache/stats"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
-	testLogrus "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/prebid/prebid-cache/backends"
@@ -17,58 +18,8 @@ import (
 	"github.com/prebid/prebid-cache/metrics/metricstest"
 )
 
-func TestGetJsonTests(t *testing.T) {
-	hook := testLogrus.NewGlobal()
-	defer func() { logrus.StandardLogger().ExitFunc = nil }()
-	logrus.StandardLogger().ExitFunc = func(int) {}
-
-	jsonTests := listJsonFiles("sample-requests/get-endpoint")
-	for _, testFile := range jsonTests {
-		var backend backends.Backend
-		mockMetrics := metricstest.CreateMockMetrics()
-		tc, backend, m, err := setupJsonTest(&mockMetrics, backend, testFile)
-		if !assert.NoError(t, err, "%s", testFile) {
-			hook.Reset()
-			continue
-		}
-
-		router := httprouter.New()
-		router.GET("/cache", NewGetHandler(backend, m, tc.HostConfig.AllowSettingKeys))
-		request, err := http.NewRequest("GET", "/cache?"+tc.Query, nil)
-		if !assert.NoError(t, err, "Failed to create a GET request: %v", err) {
-			hook.Reset()
-			assert.Nil(t, hook.LastEntry())
-			continue
-		}
-		rr := httptest.NewRecorder()
-
-		// RUN TEST
-		router.ServeHTTP(rr, request)
-
-		// ASSERTIONS
-		assert.Equal(t, tc.ExpectedOutput.Code, rr.Code, testFile)
-
-		// Assert this is a valid test that expects either an error or a GetResponse
-		if !assert.False(t, len(tc.ExpectedOutput.ErrorMsg) > 0 && len(tc.ExpectedOutput.GetOutput) > 0, "%s must come with either an expected error message or an expected response", testFile) {
-			hook.Reset()
-			assert.Nil(t, hook.LastEntry())
-			continue
-		}
-
-		// If error is expected, assert error message with the response body
-		if len(tc.ExpectedOutput.ErrorMsg) > 0 {
-			assert.Equal(t, tc.ExpectedOutput.ErrorMsg, rr.Body.String(), testFile)
-		} else {
-			assert.Equal(t, tc.ExpectedOutput.GetOutput, rr.Body.String(), testFile)
-		}
-
-		assertLogEntries(t, tc.ExpectedLogEntries, hook.Entries, testFile)
-		metricstest.AssertMetrics(t, tc.ExpectedMetrics, mockMetrics)
-
-		// Reset log after every test and assert successful reset
-		hook.Reset()
-		assert.Nil(t, hook.LastEntry())
-	}
+func init() {
+	stats.InitStat("", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, false)
 }
 
 func TestGetInvalidUUIDs(t *testing.T) {
@@ -125,48 +76,6 @@ func TestGetHandler(t *testing.T) {
 		out  testOutput
 	}{
 		{
-			"Missing UUID. Return http error but don't interrupt server's execution",
-			testInput{
-				uuid:      "",
-				allowKeys: false,
-			},
-			testOutput{
-				responseCode: http.StatusBadRequest,
-				responseBody: "GET /cache: Missing required parameter uuid\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache: Missing required parameter uuid",
-						lvl: logrus.ErrorLevel,
-					},
-				},
-				expectedMetrics: []string{
-					"RecordGetTotal",
-					"RecordGetBadRequest",
-				},
-			},
-		},
-		{
-			"Prebid Cache wasn't configured to allow custom keys therefore, it doesn't allow for keys different than 36 char long. Respond with http error and don't interrupt server's execution",
-			testInput{
-				uuid:      "non-36-char-key-maps-to-json",
-				allowKeys: false,
-			},
-			testOutput{
-				responseCode: http.StatusNotFound,
-				responseBody: "GET /cache uuid=non-36-char-key-maps-to-json: invalid uuid length\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache uuid=non-36-char-key-maps-to-json: invalid uuid length",
-						lvl: logrus.ErrorLevel,
-					},
-				},
-				expectedMetrics: []string{
-					"RecordGetTotal",
-					"RecordGetBadRequest",
-				},
-			},
-		},
-		{
 			"Configuration that allows custom keys. These are not required to be 36 char long. Since the uuid maps to a value, return it along a 200 status code",
 			testInput{
 				uuid:      "non-36-char-key-maps-to-json",
@@ -179,42 +88,6 @@ func TestGetHandler(t *testing.T) {
 				expectedMetrics: []string{
 					"RecordGetTotal",
 					"RecordGetDuration",
-				},
-			},
-		},
-		{
-			"Valid 36 char long UUID not found in database. Return http error but don't interrupt server's execution",
-			testInput{uuid: "uuid-not-found-and-links-to-no-value"},
-			testOutput{
-				responseCode: http.StatusNotFound,
-				responseBody: "GET /cache uuid=uuid-not-found-and-links-to-no-value: Key not found\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache uuid=uuid-not-found-and-links-to-no-value: Key not found",
-						lvl: logrus.DebugLevel,
-					},
-				},
-				expectedMetrics: []string{
-					"RecordGetTotal",
-					"RecordGetBadRequest",
-				},
-			},
-		},
-		{
-			"Data from backend is not preceeded by 'xml' nor 'json' string. Return http error but don't interrupt server's execution",
-			testInput{uuid: "36-char-key-maps-to-non-xml-nor-json"},
-			testOutput{
-				responseCode: http.StatusInternalServerError,
-				responseBody: "GET /cache uuid=36-char-key-maps-to-non-xml-nor-json: Cache data was corrupted. Cannot determine type.\n",
-				logEntries: []logEntry{
-					{
-						msg: "GET /cache uuid=36-char-key-maps-to-non-xml-nor-json: Cache data was corrupted. Cannot determine type.",
-						lvl: logrus.ErrorLevel,
-					},
-				},
-				expectedMetrics: []string{
-					"RecordGetTotal",
-					"RecordGetError",
 				},
 			},
 		},

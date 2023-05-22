@@ -1,9 +1,7 @@
 package main
 
 import (
-	"os"
-
-	log "github.com/sirupsen/logrus"
+	_ "net/http/pprof"
 
 	backendConfig "github.com/prebid/prebid-cache/backends/config"
 	"github.com/prebid/prebid-cache/config"
@@ -15,9 +13,10 @@ import (
 const configFileName = "config"
 
 func main() {
-	log.SetOutput(os.Stdout)
+
+	//log.SetOutput(os.Stdout)
 	cfg := config.NewConfig(configFileName)
-	setLogLevel(cfg.Log.Level)
+	//setLogLevel(cfg.Log.Level)
 	cfg.ValidateAndLog()
 
 	appMetrics := metrics.CreateMetrics(cfg)
@@ -28,10 +27,10 @@ func main() {
 	server.Listen(cfg, publicHandler, adminHandler, appMetrics)
 }
 
-func setLogLevel(logLevel config.LogLevel) {
+/*func setLogLevel(logLevel config.LogLevel) {
 	level, err := log.ParseLevel(string(logLevel))
 	if err != nil {
 		log.Fatalf("Invalid logrus level: %v", err)
 	}
 	log.SetLevel(level)
-}
+}*/

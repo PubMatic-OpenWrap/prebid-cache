@@ -3,10 +3,10 @@ package backends
 import (
 	"context"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/gocql/gocql"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 // CassandraDB is an interface that helps us communicate with a cassandra storage service
@@ -57,6 +57,9 @@ func (c *CassandraDBClient) Init() error {
 
 	var err error
 	c.session, err = c.cluster.CreateSession()
+	if err != nil {
+		logger.Fatal("Error creating Cassandra backend: %v", err)
+	}
 
 	return err
 }
@@ -76,7 +79,7 @@ func NewCassandraBackend(cfg config.Cassandra) *CassandraBackend {
 	}
 
 	if err := backend.client.Init(); err != nil {
-		log.Fatalf("Error creating Cassandra backend: %v", err)
+		logger.Fatal("Error creating Cassandra backend: %v", err)
 		panic("Cassandra failure. This shouldn't happen.")
 	}
 

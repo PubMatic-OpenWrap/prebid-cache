@@ -1,19 +1,19 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	log "github.com/sirupsen/logrus"
-
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func newPrometheusServer(cfg *config.Configuration, promRegistry *prometheus.Registry) *http.Server {
 	if promRegistry == nil {
-		log.Errorf("Prometheus metrics configured, but a Prometheus metrics engine was not found. Cannot set up a Prometheus listener.")
+		logger.Error("Prometheus metrics configured, but a Prometheus metrics engine was not found. Cannot set up a Prometheus listener.")
 	}
 	return &http.Server{
 		Addr: ":" + strconv.Itoa(cfg.Metrics.Prometheus.Port),
@@ -28,5 +28,13 @@ func newPrometheusServer(cfg *config.Configuration, promRegistry *prometheus.Reg
 type loggerForPrometheus struct{}
 
 func (loggerForPrometheus) Println(v ...interface{}) {
-	log.Warning(v...)
+	if len(v) == 0 {
+		return
+	}
+
+	if len(v) == 1 {
+		logger.Warn(fmt.Sprintf("%v", v[0]))
+	} else {
+		logger.Warn(fmt.Sprintf("%v", v[0]), v[1:]...)
+	}
 }

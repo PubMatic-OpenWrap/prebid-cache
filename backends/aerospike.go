@@ -5,12 +5,13 @@ import (
 	"errors"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	as "github.com/aerospike/aerospike-client-go/v6"
 	as_types "github.com/aerospike/aerospike-client-go/v6/types"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/stats"
 	"github.com/prebid/prebid-cache/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 const setName = "uuid"
@@ -76,7 +77,7 @@ func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *Aerosp
 
 	if len(cfg.Host) > 1 {
 		hosts = append(hosts, as.NewHost(cfg.Host, cfg.Port))
-		log.Info("config.backend.aerospike.host is being deprecated in favor of config.backend.aerospike.hosts")
+		logger.Info("config.backend.aerospike.host is being deprecated in favor of config.backend.aerospike.hosts")
 	}
 	for _, host := range cfg.Hosts {
 		hosts = append(hosts, as.NewHost(host, cfg.Port))
@@ -84,10 +85,11 @@ func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *Aerosp
 
 	client, err := as.NewClientWithPolicyAndHost(clientPolicy, hosts...)
 	if err != nil {
-		log.Fatalf("Error creating Aerospike backend: %s", classifyAerospikeError(err).Error())
+		stats.LogAerospikeErrorStats()
+		logger.Fatal("Error creating Aerospike backend: %+v", err)
 		panic("AerospikeBackend failure. This shouldn't happen.")
 	}
-	log.Infof("Connected to Aerospike host(s) %v on port %d", append(cfg.Hosts, cfg.Host), cfg.Port)
+	logger.Info("Connected to Aerospike host(s) %v on port %d", append(cfg.Hosts, cfg.Host), cfg.Port)
 
 	// client.DefaultPolicy.MaxRetries determines the maximum number of retries before aborting a transaction.
 	// Default for read: 2 (initial attempt + 2 retries = 3 attempts)
@@ -113,6 +115,7 @@ func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *Aerosp
 // Get creates an aerospike key based on the UUID key parameter, perfomrs the client's Get call
 // and validates results. Can return a KEY_NOT_FOUND error or other Aerospike server errors
 func (a *AerospikeBackend) Get(ctx context.Context, key string) (string, error) {
+	aerospikeStartTime := time.Now()
 	asKey, err := a.client.NewUUIDKey(a.namespace, key)
 	if err != nil {
 		return "", classifyAerospikeError(err)
@@ -129,6 +132,7 @@ func (a *AerospikeBackend) Get(ctx context.Context, key string) (string, error) 
 	if !found {
 		return "", errors.New("No 'value' bucket found")
 	}
+	logger.Info("Time taken by Aerospike for get: %v", time.Now().Sub(aerospikeStartTime))
 
 	str, isString := value.(string)
 	if !isString {
@@ -141,6 +145,7 @@ func (a *AerospikeBackend) Get(ctx context.Context, key string) (string, error) 
 // Put creates an aerospike key based on the UUID key parameter and stores the value using the
 // client's Put implementaion. Can return a RECORD_EXISTS error or other Aerospike server errors
 func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+	aerospikeStartTime := time.Now()
 	asKey, err := a.client.NewUUIDKey(a.namespace, key)
 	if err != nil {
 		return classifyAerospikeError(err)
@@ -156,6 +161,7 @@ func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, tt
 		return classifyAerospikeError(err)
 	}
 
+	logger.Info("Time taken by Aerospike for put: %v", time.Now().Sub(aerospikeStartTime))
 	return nil
 }
 

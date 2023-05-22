@@ -4,8 +4,8 @@ import (
 	"net"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/prebid/prebid-cache/metrics"
-	log "github.com/sirupsen/logrus"
 )
 
 // monitorableListener tracks any opened connections in the metrics.
@@ -25,7 +25,7 @@ func (l *monitorableConnection) Close() error {
 	if err == nil {
 		l.metrics.RecordConnectionClosed()
 	} else {
-		log.Errorf("Error closing connection: %v", err)
+		logger.Error("Error closing connection: %v", err)
 		l.metrics.RecordCloseConnectionErrors()
 	}
 	return err
@@ -34,7 +34,7 @@ func (l *monitorableConnection) Close() error {
 func (ln *monitorableListener) Accept() (c net.Conn, err error) {
 	tc, err := ln.Listener.Accept()
 	if err != nil {
-		log.Errorf("Error accepting connection: %v", err)
+		logger.Error("Error accepting connection: %v", err)
 		ln.metrics.RecordAcceptConnectionErrors()
 		return tc, err
 	}

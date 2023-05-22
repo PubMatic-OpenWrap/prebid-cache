@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/google/gomemcache/memcache"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 // MemcacheDataStore is an interface that helps us communicate with an instance of the
@@ -54,7 +54,7 @@ func NewMemcacheBackend(cfg config.Memcache) *MemcacheBackend {
 		var err error
 		mc, err = memcache.NewDiscoveryClient(cfg.ConfigHost, time.Duration(cfg.PollIntervalSeconds)*time.Second)
 		if err != nil {
-			log.Fatalf("%v", err)
+			logger.Fatal("%v", err)
 			panic("Memcache failure. This shouldn't happen.")
 		}
 	} else {

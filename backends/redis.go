@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/go-redis/redis/v8"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/utils"
-	log "github.com/sirupsen/logrus"
 )
 
 // RedisDB is an interface that helps us communicate with an instance of a
@@ -71,11 +71,11 @@ func NewRedisBackend(cfg config.Redis, ctx context.Context) *RedisBackend {
 	_, err := redisClient.client.Ping(ctx).Result()
 
 	if err != nil {
-		log.Fatalf("Error creating Redis backend: %v", err)
+		logger.Fatal("Error creating Redis backend: %v", err)
 		panic("RedisBackend failure. This shouldn't happen.")
 	}
 
-	log.Infof("Connected to Redis at %s:%d", cfg.Host, cfg.Port)
+	logger.Info("Connected to Redis at %s:%d", cfg.Host, cfg.Port)
 
 	return &RedisBackend{
 		cfg:    cfg,

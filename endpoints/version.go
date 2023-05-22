@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/julienschmidt/httprouter"
-	log "github.com/sirupsen/logrus"
 )
 
 const versionEndpointValueNotSet = "not-set"
@@ -27,7 +27,7 @@ func NewVersionEndpoint(version, revision string) func(http.ResponseWriter, *htt
 		Version:  version,
 	})
 	if err != nil {
-		log.Errorf("error creating /version endpoint response: %v", err)
+		logger.Error("error creating /version endpoint response: %v", err)
 	}
 
 	return func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {

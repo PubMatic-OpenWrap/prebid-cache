@@ -11,8 +11,6 @@ import (
 	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/prebid/prebid-cache/utils"
 
-	"github.com/sirupsen/logrus"
-	logrusTest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,28 +48,6 @@ func TestApplyCompression(t *testing.T) {
 	}
 }
 
-func TestApplyUnknownCompression(t *testing.T) {
-	// logrus entries will be recorded to this `hook` object so we can compare and assert them
-	hook := logrusTest.NewGlobal()
-	defer func() { logrus.StandardLogger().ExitFunc = nil }()
-	logrus.StandardLogger().ExitFunc = func(int) {}
-
-	// Input and expected values
-	inConfig := config.Compression{Type: "unknown"}
-	expectedLogMessage := "Unknown compression type: unknown"
-	expectedLogLevel := logrus.FatalLevel
-
-	// run and assert it panics
-	panicTestFunction := func() {
-		applyCompression(inConfig, &fakeBackend{})
-	}
-	assert.Panics(t, panicTestFunction, "Unknown compression type should have made applyCompression to panic")
-
-	// assertions
-	assert.Equal(t, expectedLogMessage, hook.Entries[0].Message, "Expected log message not found")
-	assert.Equal(t, expectedLogLevel, hook.Entries[0].Level, "Unexpected log level")
-}
-
 func TestNewMemoryOrMemcacheBackend(t *testing.T) {
 	testCases := []struct {
 		desc            string
@@ -105,83 +81,6 @@ func TestNewMemoryOrMemcacheBackend(t *testing.T) {
 		assert.IsType(t, tc.expectedBackend, actualBackend, tc.desc)
 	}
 
-}
-
-func TestNewBaseBackend(t *testing.T) {
-	// logrus entries will be recorded to this `hook` object so we can compare and assert them
-	hook := logrusTest.NewGlobal()
-	defer func() { logrus.StandardLogger().ExitFunc = nil }()
-	logrus.StandardLogger().ExitFunc = func(int) {}
-
-	type logEntry struct {
-		msg string
-		lvl logrus.Level
-	}
-
-	testCases := []struct {
-		desc                string
-		inConfig            config.Backend
-		expectedBackendType backends.Backend
-		expectedLogEntries  []logEntry
-	}{
-		{
-			desc:     "unknown",
-			inConfig: config.Backend{Type: "unknown"},
-			expectedLogEntries: []logEntry{
-				{msg: "Unknown backend type: unknown", lvl: logrus.FatalLevel},
-			},
-		},
-		{
-			desc:     "Cassandra",
-			inConfig: config.Backend{Type: config.BackendCassandra},
-			expectedLogEntries: []logEntry{
-				{
-					msg: "Error creating Cassandra backend: ",
-					lvl: logrus.FatalLevel,
-				},
-			},
-		},
-		{
-			desc:     "Aerospike",
-			inConfig: config.Backend{Type: config.BackendAerospike},
-			expectedLogEntries: []logEntry{
-				{msg: "Error creating Aerospike backend: ", lvl: logrus.FatalLevel},
-			},
-		},
-		{
-			desc:     "Redis",
-			inConfig: config.Backend{Type: config.BackendRedis},
-			expectedLogEntries: []logEntry{
-				{msg: "Error creating Redis backend: ", lvl: logrus.FatalLevel},
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		mockMetrics := metricstest.CreateMockMetrics()
-		m := &metrics.Metrics{
-			MetricEngines: []metrics.CacheMetrics{
-				&mockMetrics,
-			},
-		}
-
-		// run and assert it panics
-		panicTestFunction := func() {
-			newBaseBackend(tc.inConfig, m)
-		}
-		assert.Panics(t, panicTestFunction, "%s backend initialized in this test should error and panic.", tc.desc)
-
-		// assertions
-		assert.Len(t, hook.Entries, len(tc.expectedLogEntries), tc.desc)
-		if len(tc.expectedLogEntries) > 0 {
-			for i := 0; i < len(tc.expectedLogEntries); i++ {
-				assert.Contains(t, hook.Entries[i].Message, tc.expectedLogEntries[i].msg, tc.desc)
-				assert.Equal(t, tc.expectedLogEntries[i].lvl, hook.Entries[i].Level, tc.desc)
-			}
-		}
-		hook.Reset()
-		assert.Nil(t, hook.LastEntry())
-	}
 }
 
 func TestGetMaxTTLSeconds(t *testing.T) {

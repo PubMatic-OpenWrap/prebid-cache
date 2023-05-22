@@ -9,12 +9,14 @@ import (
 	"sync"
 	"time"
 
+	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-cache/backends"
 	backendDecorators "github.com/prebid/prebid-cache/backends/decorators"
+	"github.com/prebid/prebid-cache/constant"
 	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/stats"
 	"github.com/prebid/prebid-cache/utils"
-	"github.com/sirupsen/logrus"
 )
 
 // PutHandler serves "POST /cache" requests.
@@ -74,11 +76,13 @@ func NewPutHandler(storage backends.Backend, metrics *metrics.Metrics, maxNumVal
 // corresponding error is returned
 func (e *PutHandler) parseRequest(r *http.Request) (*putRequest, error) {
 	if r == nil {
+		logger.Error("Failed to read the request body.")
 		return nil, utils.NewPBCError(utils.PUT_BAD_REQUEST)
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		logger.Error("Failed to read the request body.")
 		return nil, utils.NewPBCError(utils.PUT_BAD_REQUEST)
 	}
 	defer r.Body.Close()
@@ -89,12 +93,14 @@ func (e *PutHandler) parseRequest(r *http.Request) (*putRequest, error) {
 
 	if err := json.Unmarshal(body, put); err != nil {
 		// place memory back in sync pool
+		stats.LogCacheFailedPutStats(constant.InvalidJSON)
 		e.memory.requestPool.Put(put)
 		return nil, utils.NewPBCError(utils.PUT_BAD_REQUEST, string(body))
 	}
 
 	if len(put.Puts) > e.cfg.maxNumValues {
 		// place memory back in sync pool
+		stats.LogCacheFailedPutStats(constant.KeyCountExceeded)
 		e.memory.requestPool.Put(put)
 		return nil, utils.NewPBCError(utils.PUT_MAX_NUM_VALUES, fmt.Sprintf("More keys than allowed: %d", e.cfg.maxNumValues))
 	}
@@ -157,6 +163,7 @@ func unescapeXML(rawXML json.RawMessage) (string, error) {
 
 func classifyBackendError(err error, index int) error {
 	if _, ok := err.(*backendDecorators.BadPayloadSize); ok {
+		stats.LogCacheFailedPutStats(constant.MaxSizeExceeded)
 		return utils.NewPBCError(utils.BAD_PAYLOAD_SIZE, fmt.Sprintf("POST /cache element %d exceeded max size: %v", index, err.Error()))
 	}
 
@@ -166,25 +173,26 @@ func classifyBackendError(err error, index int) error {
 	default:
 		return utils.NewPBCError(utils.PUT_INTERNAL_SERVER, err.Error())
 	}
-
-	return nil
 }
 
 func logBackendError(err error) {
-	logrus.Error("POST /cache Error while writing to the back-end: ", err)
+	logger.Error("POST /cache Error while writing to the backend: %+v", err)
 
 	if pbcErr, isPBCErr := err.(utils.PBCError); isPBCErr && pbcErr.StatusCode == utils.PUT_DEADLINE_EXCEEDED {
-		logrus.Error("POST /cache timed out:", err)
+		stats.LogCacheFailedPutStats(constant.TimedOut)
+		logger.Error("POST /cache timed out: %+v", err)
 	} else {
-		logrus.Error("POST /cache had an unexpected error:", err)
+		stats.LogCacheFailedPutStats(constant.UnexpErr)
+		logger.Error("POST /cache had an unexpected error: %+v", err)
 	}
 }
 
 // handle is the handler function that gets assigned to the POST method of the `/cache` endpoint
 func (e *PutHandler) handle(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	e.metrics.RecordPutTotal()
-
 	start := time.Now()
+	stats.LogCacheRequestedPutStats()
+	logger.Info("POST /cache called")
 
 	bytes, err := e.processPutRequest(r)
 	if err != nil {

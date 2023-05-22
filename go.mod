@@ -1,16 +1,23 @@
-module github.com/prebid/prebid-cache
+module github.com/PubMatic-OpenWrap/prebid-cache
 
 go 1.19
 
+replace github.com/bradfitz/gomemcache => github.com/google/gomemcache v0.0.0-20200326162346-94281991662a
+
+replace github.com/prebid/prebid-cache => ./
+
 require (
+	git.pubmatic.com/PubMatic/go-common.git v0.0.0-20211116062746-840b999f668b
 	github.com/aerospike/aerospike-client-go/v6 v6.7.0
 	github.com/didip/tollbooth/v6 v6.1.2
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gocql/gocql v1.0.0
 	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/snappy v0.0.4
 	github.com/google/gomemcache v0.0.0-20210709172713-c1c93e4523ee
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/prebid/prebid-cache v0.0.0-00010101000000-000000000000
 	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475
@@ -19,11 +26,11 @@ require (
 	github.com/spf13/viper v1.11.0
 	github.com/stretchr/testify v1.7.1
 	github.com/vrischmann/go-metrics-influxdb v0.1.1
+	google.golang.org/appengine v1.6.7
 )
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bitly/go-hostpool v0.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -50,6 +57,7 @@ require (
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64 // indirect
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.8 // indirect
