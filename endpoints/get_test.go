@@ -1,17 +1,21 @@
 package endpoints
 
 import (
+	"bytes"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/prebid/prebid-cache/stats"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/prebid/prebid-cache/backends"
-	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/prebid/prebid-cache/backends"
+	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/metrics/metricstest"
 )
 
 func init() {
@@ -21,9 +25,15 @@ func init() {
 func TestGetInvalidUUIDs(t *testing.T) {
 	backend := backends.NewMemoryBackend()
 	router := httprouter.New()
-	mockmetrics := metricstest.CreateMockMetrics()
 
-	router.GET("/cache", NewGetHandler(backend, mockmetrics, false))
+	mockMetrics := metricstest.CreateMockMetrics()
+	m := &metrics.Metrics{
+		MetricEngines: []metrics.CacheMetrics{
+			&mockMetrics,
+		},
+	}
+
+	router.GET("/cache", NewGetHandler(backend, m, false))
 
 	getResults := doMockGet(t, router, "fdd9405b-ef2b-46da-a55a-2f526d338e16")
 	if getResults.Code != http.StatusNotFound {
@@ -39,6 +49,12 @@ func TestGetInvalidUUIDs(t *testing.T) {
 }
 
 func TestGetHandler(t *testing.T) {
+	preExistentDataInBackend := map[string]string{
+		"non-36-char-key-maps-to-json":         `json{"field":"value"}`,
+		"36-char-key-maps-to-non-xml-nor-json": `#@!*{"desc":"data got malformed and is not prefixed with 'xml' nor 'json' substring"}`,
+		"36-char-key-maps-to-actual-xml-value": "xml<tag>xml data here</tag>",
+	}
+
 	type logEntry struct {
 		msg string
 		lvl logrus.Level
@@ -47,17 +63,11 @@ func TestGetHandler(t *testing.T) {
 		uuid      string
 		allowKeys bool
 	}
-	type metricsRecords struct {
-		totalRequests int64
-		badRequests   int64
-		requestErrs   int64
-		requestDur    float64
-	}
 	type testOutput struct {
 		responseCode    int
 		responseBody    string
 		logEntries      []logEntry
-		metricsRecorded metricsRecords
+		expectedMetrics []string
 	}
 
 	testCases := []struct {
@@ -75,9 +85,9 @@ func TestGetHandler(t *testing.T) {
 				responseCode: http.StatusOK,
 				responseBody: `{"field":"value"}`,
 				logEntries:   []logEntry{},
-				metricsRecorded: metricsRecords{
-					totalRequests: int64(1),
-					requestDur:    1.00,
+				expectedMetrics: []string{
+					"RecordGetTotal",
+					"RecordGetDuration",
 				},
 			},
 		},
@@ -88,9 +98,9 @@ func TestGetHandler(t *testing.T) {
 				responseCode: http.StatusOK,
 				responseBody: "<tag>xml data here</tag>",
 				logEntries:   []logEntry{},
-				metricsRecorded: metricsRecords{
-					totalRequests: int64(1),
-					requestDur:    1.00,
+				expectedMetrics: []string{
+					"RecordGetTotal",
+					"RecordGetDuration",
 				},
 			},
 		},
@@ -111,13 +121,30 @@ func TestGetHandler(t *testing.T) {
 		fatal = false
 
 		// Set up test object
-		backend := newMockBackend()
+		backend, err := backends.NewMemoryBackendWithValues(preExistentDataInBackend)
+		if !assert.NoError(t, err, "%s. Mock backend could not be created", test.desc) {
+			hook.Reset()
+			continue
+		}
 		router := httprouter.New()
-		mockmetrics := metricstest.CreateMockMetrics()
-		router.GET("/cache", NewGetHandler(backend, mockmetrics, test.in.allowKeys))
+		mockMetrics := metricstest.CreateMockMetrics()
+		m := &metrics.Metrics{
+			MetricEngines: []metrics.CacheMetrics{
+				&mockMetrics,
+			},
+		}
+		router.GET("/cache", NewGetHandler(backend, m, test.in.allowKeys))
 
 		// Run test
-		getResults := doMockGet(t, router, test.in.uuid)
+		getResults := httptest.NewRecorder()
+
+		body := new(bytes.Buffer)
+		getReq, err := http.NewRequest("GET", "/cache"+"?uuid="+test.in.uuid, body)
+		if !assert.NoError(t, err, "Failed to create a GET request: %v", err) {
+			hook.Reset()
+			continue
+		}
+		router.ServeHTTP(getResults, getReq)
 
 		// Assert server response and status code
 		assert.Equal(t, test.out.responseCode, getResults.Code, test.desc)
@@ -134,10 +161,7 @@ func TestGetHandler(t *testing.T) {
 		}
 
 		// Assert recorded metrics
-		assert.Equal(t, test.out.metricsRecorded.totalRequests, metricstest.MockCounters["gets.current_url.request.total"], "%s - handle function should record every incomming GET request", test.desc)
-		assert.Equal(t, test.out.metricsRecorded.badRequests, metricstest.MockCounters["gets.current_url.request.bad_request"], "%s - Bad request wasn't recorded", test.desc)
-		assert.Equal(t, test.out.metricsRecorded.requestErrs, metricstest.MockCounters["gets.current_url.request.error"], "%s - WriteGetResponse error should have been recorded", test.desc)
-		assert.Equal(t, test.out.metricsRecorded.requestDur, metricstest.MockHistograms["gets.current_url.duration"], "%s - Successful GET request should have recorded duration", test.desc)
+		metricstest.AssertMetrics(t, test.out.expectedMetrics, mockMetrics)
 
 		// Reset log
 		hook.Reset()

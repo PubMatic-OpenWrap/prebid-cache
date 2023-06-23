@@ -10,7 +10,7 @@ import (
 	influxdb "github.com/vrischmann/go-metrics-influxdb"
 )
 
-var TenSeconds time.Duration = time.Second * 10
+const TenSeconds time.Duration = time.Second * 10
 
 const MetricsInfluxDB = "InfluxDB"
 
@@ -130,8 +130,7 @@ func CreateInfluxMetrics() *InfluxMetrics {
 	return m
 }
 
-// Export begins sending metrics to the configured database.
-// This method blocks indefinitely, so it should probably be run in a goroutine.
+// Export begins metric publishing services.
 func (m InfluxMetrics) Export(cfg config.Metrics) {
 
 	logger.Info("Metrics will be exported to Influx with host=%s, db=%s, username=%s", cfg.Influx.Host, cfg.Influx.Database, cfg.Influx.Username)
@@ -140,10 +139,11 @@ func (m InfluxMetrics) Export(cfg config.Metrics) {
 		TenSeconds,
 		cfg.Influx.Host,
 		cfg.Influx.Database,
+		cfg.Influx.Measurement,
 		cfg.Influx.Username,
 		cfg.Influx.Password,
+		cfg.Influx.AlignTimestamps,
 	)
-	return
 }
 
 func (m *InfluxMetrics) GetEngineRegistry() interface{} {

@@ -1,0 +1,38 @@
+{
+  "description": "Put request stores multiple elements without going over the 'max_num_values' cap of its config.",
+  "config": {
+    "max_num_values": 2
+  },
+  "put_request": {
+    "puts": [
+      {
+        "type": "xml",
+        "ttlseconds": 60,
+        "value": "<?xml version=\"1.0\">__video_info__<\\/VAST>\r\n"
+      },
+      {
+        "type": "json",
+        "ttlseconds": 60,
+        "value": "{\"an_int_field\": 1}"
+      }
+    ]
+  },
+  "expected_metrics": [
+    "RecordPutTotal",
+    "RecordPutBackendXml",
+    "RecordPutBackendJson",
+    "RecordPutBackendSize",
+    "RecordPutBackendTTLSeconds",
+    "RecordPutBackendDuration",
+    "RecordPutDuration"
+  ],
+  "expected_output": {
+    "code": 200,
+    "put_response": {
+      "responses": [
+        {"uuid": "random"},
+        {"uuid": "random"}
+      ]
+    }
+  }
+}

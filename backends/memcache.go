@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/google/gomemcache/memcache"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/utils"
 )

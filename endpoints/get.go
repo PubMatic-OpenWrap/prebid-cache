@@ -23,7 +23,7 @@ type GetHandler struct {
 	allowCustomKeys bool
 }
 
-// NewGetHandler returns the handle function for the "/cache" endpoint when it gets receives a GET request
+// NewGetHandler returns the handle function for the "/cache" endpoint when it receives a GET request
 func NewGetHandler(storage backends.Backend, metrics *metrics.Metrics, allowCustomKeys bool) func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	getHandler := &GetHandler{
 		// Assign storage client to get endpoint
@@ -95,12 +95,12 @@ func parseUUID(r *http.Request, allowCustomKeys bool) (string, error) {
 // writeGetResponse writes the "Content-Type" header and sends back the stored data as a response if
 // the sotred data is prefixed by either the "xml" or "json"
 func writeGetResponse(w http.ResponseWriter, storedData string) error {
-	if strings.HasPrefix(storedData, backends.XML_PREFIX) {
+	if strings.HasPrefix(storedData, utils.XML_PREFIX) {
 		w.Header().Set("Content-Type", "application/xml")
-		w.Write([]byte(storedData)[len(backends.XML_PREFIX):])
-	} else if strings.HasPrefix(storedData, backends.JSON_PREFIX) {
+		w.Write([]byte(storedData)[len(utils.XML_PREFIX):])
+	} else if strings.HasPrefix(storedData, utils.JSON_PREFIX) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(storedData)[len(backends.JSON_PREFIX):])
+		w.Write([]byte(storedData)[len(utils.JSON_PREFIX):])
 	} else {
 		return utils.NewPBCError(utils.UNKNOWN_STORED_DATA_TYPE)
 	}

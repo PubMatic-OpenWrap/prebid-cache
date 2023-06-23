@@ -1,0 +1,33 @@
+{
+  "description": "Put request wants to store object for more seconds than Prebid Cache maximum. Cap at the 'max_ttl_seconds' value and store successfully",
+  "config": {
+    "max_ttl_seconds": 5
+  },
+  "put_request": {
+    "puts": [
+      {
+        "type": "xml",
+        "ttlseconds": 6,
+        "value": "<?xml version=\"1.0\">__video_info__<\\/VAST>\r\n"
+      }
+    ]
+  },
+  "expected_metrics": [
+    "RecordPutTotal",
+    "RecordPutBackendXml",
+    "RecordPutBackendSize",
+    "RecordPutBackendTTLSeconds",
+    "RecordPutBackendDuration",
+    "RecordPutDuration"
+  ],
+  "expected_output": {
+    "code": 200,
+    "put_response": {
+      "responses": [
+        {
+          "uuid": "random"
+        }
+      ]
+    }
+  }
+}

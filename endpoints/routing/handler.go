@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/didip/tollbooth"
-	"github.com/didip/tollbooth/limiter"
+	"github.com/didip/tollbooth/v6"
+	"github.com/didip/tollbooth/v6/limiter"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-cache/backends"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/endpoints"
 	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/version"
 	"github.com/rs/cors"
 )
 
@@ -34,9 +35,10 @@ func NewPublicHandler(cfg config.Configuration, dataStore backends.Backend, appM
 }
 
 func addReadRoutes(cfg config.Configuration, dataStore backends.Backend, appMetrics *metrics.Metrics, router *httprouter.Router) {
-	router.GET("/", endpoints.NewIndexHandler(cfg.IndexResponse)) // Default route handler
-	router.GET("/status", endpoints.Status)                       // Determines whether the server is ready for more traffic.
+	router.GET("/", endpoints.NewIndexHandler(cfg.IndexResponse))          // Default route handler
+	router.GET("/status", endpoints.NewStatusEndpoint(cfg.StatusResponse)) // Determines whether the server is ready for more traffic.
 	router.GET("/cache", endpoints.NewGetHandler(dataStore, appMetrics, cfg.RequestLimits.AllowSettingKeys))
+	router.GET("/version", endpoints.NewVersionEndpoint(version.Ver, version.Rev))
 	router.GET("/healthcheck", endpoints.HealthCheck) // Determines whether the server is up and running.
 }
 
@@ -57,7 +59,7 @@ func handleRateLimiting(next http.Handler, cfg config.RateLimiting) http.Handler
 		return next
 	}
 
-	limit := tollbooth.NewLimiter(cfg.MaxRequestsPerSecond, time.Second, &limiter.ExpirableOptions{
+	limit := tollbooth.NewLimiter(float64(cfg.MaxRequestsPerSecond), &limiter.ExpirableOptions{
 		DefaultExpirationTTL: 1 * time.Hour,
 	})
 	limit.SetIPLookups([]string{"X-Forwarded-For", "X-Real-IP"})

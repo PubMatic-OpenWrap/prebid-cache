@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prebid/prebid-cache/constant"
+	"github.com/prebid/prebid-cache/utils"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -80,10 +81,14 @@ func getExpectedDefaultConfig() Configuration {
 				Hosts: []string{},
 			},
 			Aerospike: Aerospike{
-				Hosts: []string{},
+				Hosts:          []string{},
+				MaxReadRetries: 2,
 			},
 			Cassandra: Cassandra{
-				DefaultTTL: 2400,
+				DefaultTTL: utils.CASSANDRA_DEFAULT_TTL_SECONDS,
+			},
+			Redis: Redis{
+				ExpirationMinutes: utils.REDIS_DEFAULT_EXPIRATION_MINUTES,
 			},
 		},
 		Compression: Compression{
@@ -126,13 +131,15 @@ func getExpectedFullConfigForTestFile() Configuration {
 		Backend: Backend{
 			Type: BackendMemory,
 			Aerospike: Aerospike{
-				DefaultTTL: 3600,
-				Host:       "aerospike.prebid.com",
-				Hosts:      []string{"aerospike2.prebid.com", "aerospike3.prebid.com"},
-				Port:       3000,
-				Namespace:  "whatever",
-				User:       "foo",
-				Password:   "bar",
+				DefaultTTLSecs:      3600,
+				Host:                "aerospike.prebid.com",
+				Hosts:               []string{"aerospike2.prebid.com", "aerospike3.prebid.com"},
+				Port:                3000,
+				Namespace:           "whatever",
+				User:                "foo",
+				Password:            "bar",
+				MaxReadRetries:      2,
+				ConnIdleTimeoutSecs: 2,
 			},
 			Cassandra: Cassandra{
 				Hosts:      "127.0.0.1",
@@ -143,11 +150,11 @@ func getExpectedFullConfigForTestFile() Configuration {
 				Hosts: []string{"10.0.0.1:11211", "127.0.0.1"},
 			},
 			Redis: Redis{
-				Host:       "127.0.0.1",
-				Port:       6379,
-				Password:   "redis-password",
-				Db:         1,
-				Expiration: 1,
+				Host:              "127.0.0.1",
+				Port:              6379,
+				Password:          "redis-password",
+				Db:                1,
+				ExpirationMinutes: 1,
 				TLS: RedisTLS{
 					Enabled:            false,
 					InsecureSkipVerify: false,

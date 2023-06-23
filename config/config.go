@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -9,6 +10,8 @@ import (
 	"github.com/prebid/prebid-cache/constant"
 	"github.com/prebid/prebid-cache/stats"
 	"github.com/spf13/viper"
+
+	"github.com/prebid/prebid-cache/utils"
 )
 
 func NewConfig(filename string) Configuration {
@@ -57,6 +60,7 @@ func setConfigDefaults(v *viper.Viper) {
 	v.SetDefault("port", 2424)
 	v.SetDefault("admin_port", 2525)
 	v.SetDefault("index_response", "This application stores short-term data for use in Prebid.")
+	v.SetDefault("status_response", "")
 	v.SetDefault("log.level", "info")
 	v.SetDefault("backend.type", "memory")
 	v.SetDefault("backend.aerospike.host", "")
@@ -66,34 +70,40 @@ func setConfigDefaults(v *viper.Viper) {
 	v.SetDefault("backend.aerospike.user", "")
 	v.SetDefault("backend.aerospike.password", "")
 	v.SetDefault("backend.aerospike.default_ttl_seconds", 0)
+	v.SetDefault("backend.aerospike.max_read_retries", 2)
+	v.SetDefault("backend.aerospike.max_write_retries", 0)
+	v.SetDefault("backend.aerospike.connection_idle_timeout_seconds", 0)
+	v.SetDefault("backend.aerospike.connection_queue_size", 0)
 	v.SetDefault("backend.cassandra.hosts", "")
 	v.SetDefault("backend.cassandra.keyspace", "")
-	v.SetDefault("backend.cassandra.default_ttl_seconds", 2400)
+	v.SetDefault("backend.cassandra.default_ttl_seconds", utils.CASSANDRA_DEFAULT_TTL_SECONDS)
 	v.SetDefault("backend.memcache.hosts", []string{})
 	v.SetDefault("backend.redis.host", "")
 	v.SetDefault("backend.redis.port", 0)
 	v.SetDefault("backend.redis.password", "")
 	v.SetDefault("backend.redis.db", 0)
-	v.SetDefault("backend.redis.expiration", 0)
+	v.SetDefault("backend.redis.expiration", utils.REDIS_DEFAULT_EXPIRATION_MINUTES)
 	v.SetDefault("backend.redis.tls.enabled", false)
 	v.SetDefault("backend.redis.tls.insecure_skip_verify", false)
 	v.SetDefault("compression.type", "snappy")
+	v.SetDefault("metrics.influx.enabled", false)
 	v.SetDefault("metrics.influx.host", "")
 	v.SetDefault("metrics.influx.database", "")
+	v.SetDefault("metrics.influx.measurement", "")
 	v.SetDefault("metrics.influx.username", "")
 	v.SetDefault("metrics.influx.password", "")
-	v.SetDefault("metrics.influx.enabled", false)
+	v.SetDefault("metrics.influx.align_timestamps", false)
 	v.SetDefault("metrics.prometheus.port", 0)
 	v.SetDefault("metrics.prometheus.namespace", "")
 	v.SetDefault("metrics.prometheus.subsystem", "")
 	v.SetDefault("metrics.prometheus.timeout_ms", 0)
 	v.SetDefault("metrics.prometheus.enabled", false)
 	v.SetDefault("rate_limiter.enabled", true)
-	v.SetDefault("rate_limiter.num_requests", 100)
+	v.SetDefault("rate_limiter.num_requests", utils.RATE_LIMITER_NUM_REQUESTS)
 	v.SetDefault("request_limits.allow_setting_keys", false)
-	v.SetDefault("request_limits.max_size_bytes", 10*1024)
-	v.SetDefault("request_limits.max_num_values", 10)
-	v.SetDefault("request_limits.max_ttl_seconds", 3600)
+	v.SetDefault("request_limits.max_size_bytes", utils.REQUEST_MAX_SIZE_BYTES)
+	v.SetDefault("request_limits.max_num_values", utils.REQUEST_MAX_NUM_VALUES)
+	v.SetDefault("request_limits.max_ttl_seconds", utils.REQUEST_MAX_TTL_SECONDS)
 	v.SetDefault("routes.allow_public_write", true)
 }
 
@@ -111,19 +121,20 @@ func setEnvVarsLookup(v *viper.Viper) {
 }
 
 type Configuration struct {
-	Port          int           `mapstructure:"port"`
-	AdminPort     int           `mapstructure:"admin_port"`
-	IndexResponse string        `mapstructure:"index_response"`
-	Log           Log           `mapstructure:"log"`
-	RateLimiting  RateLimiting  `mapstructure:"rate_limiter"`
-	RequestLimits RequestLimits `mapstructure:"request_limits"`
-	Backend       Backend       `mapstructure:"backend"`
-	Compression   Compression   `mapstructure:"compression"`
-	Metrics       Metrics       `mapstructure:"metrics"`
-	Stats         Stats         `mapstructure:"stats"`
-	Server        Server        `mapstructure:"server"`
-	OWLog         OWLog         `mapstructure:"ow_log"`
-	Routes        Routes        `mapstructure:"routes"`
+	Port           int           `mapstructure:"port"`
+	AdminPort      int           `mapstructure:"admin_port"`
+	IndexResponse  string        `mapstructure:"index_response"`
+	Log            Log           `mapstructure:"log"`
+	RateLimiting   RateLimiting  `mapstructure:"rate_limiter"`
+	RequestLimits  RequestLimits `mapstructure:"request_limits"`
+	StatusResponse string        `mapstructure:"status_response"`
+	Backend        Backend       `mapstructure:"backend"`
+	Compression    Compression   `mapstructure:"compression"`
+	Metrics        Metrics       `mapstructure:"metrics"`
+	Routes         Routes        `mapstructure:"routes"`
+	Stats          Stats         `mapstructure:"stats"`
+	Server         Server        `mapstructure:"server"`
+	OWLog          OWLog         `mapstructure:"ow_log"`
 }
 
 // ValidateAndLog validates the config, terminating the program on any errors.
@@ -273,22 +284,32 @@ const (
 )
 
 type InfluxMetrics struct {
-	Host     string `mapstructure:"host"`
-	Database string `mapstructure:"database"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
-	Enabled  bool   `mapstructure:"enabled"`
+	Enabled         bool   `mapstructure:"enabled"`
+	Host            string `mapstructure:"host"`
+	Database        string `mapstructure:"database"`
+	Measurement     string `mapstructure:"measurement"`
+	Username        string `mapstructure:"username"`
+	Password        string `mapstructure:"password"`
+	AlignTimestamps bool   `mapstructure:"align_timestamps"`
 }
 
 func (influxMetricsConfig *InfluxMetrics) validateAndLog() {
+	// validate
 	if influxMetricsConfig.Host == "" {
 		logger.Fatal(`Despite being enabled, influx metrics came with no host info: config.metrics.influx.host = "".`)
 	}
 	if influxMetricsConfig.Database == "" {
 		logger.Fatal(`Despite being enabled, influx metrics came with no database info: config.metrics.influx.database = "".`)
 	}
+	if influxMetricsConfig.Measurement == "" {
+		log.Fatalf(`Despite being enabled, influx metrics came with no measurement info: config.metrics.influx.measurement = "".`)
+	}
+
+	// log
 	logger.Info("config.metrics.influx.host: %s", influxMetricsConfig.Host)
 	logger.Info("config.metrics.influx.database: %s", influxMetricsConfig.Database)
+	logger.Info("config.metrics.influx.measurement: %s", influxMetricsConfig.Measurement)
+	logger.Info("config.metrics.influx.align_timestamps: %v", influxMetricsConfig.AlignTimestamps)
 }
 
 type PrometheusMetrics struct {
@@ -299,16 +320,12 @@ type PrometheusMetrics struct {
 	Enabled          bool   `mapstructure:"enabled"`
 }
 
+// validateAndLog will error out when the value of port is 0
 func (promMetricsConfig *PrometheusMetrics) validateAndLog() {
 	if promMetricsConfig.Port == 0 {
 		logger.Fatal(`Despite being enabled, prometheus metrics came with an empty port number: config.metrics.prometheus.port = 0`)
 	}
-	if promMetricsConfig.Namespace == "" {
-		logger.Fatal(`Despite being enabled, prometheus metrics came with an empty name space: config.metrics.prometheus.namespace = %s.`, promMetricsConfig.Namespace)
-	}
-	if promMetricsConfig.Subsystem == "" {
-		logger.Fatal(`Despite being enabled, prometheus metrics came with an empty subsystem value: config.metrics.prometheus.subsystem = \"\".`)
-	}
+
 	logger.Info("config.metrics.prometheus.namespace: %s", promMetricsConfig.Namespace)
 	logger.Info("config.metrics.prometheus.subsystem: %s", promMetricsConfig.Subsystem)
 	logger.Info("config.metrics.prometheus.port: %d", promMetricsConfig.Port)
@@ -388,7 +405,7 @@ func (cfg *OWLog) validateAndLog() {
 	logger.Info("config.ow_log.max_log_size: %v", cfg.MaxLogSize)
 }
 
-//getHostName Generates server name from node and pod name in K8S  environment
+// getHostName Generates server name from node and pod name in K8S  environment
 func getHostName() string {
 	var (
 		nodeName string

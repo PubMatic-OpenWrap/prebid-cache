@@ -1,16 +1,26 @@
 package config
 
 import (
+	"context"
+	"time"
+
 	"git.pubmatic.com/PubMatic/go-common.git/logger"
 	"github.com/prebid/prebid-cache/backends"
 	"github.com/prebid/prebid-cache/backends/decorators"
 	"github.com/prebid/prebid-cache/compression"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/metrics"
+	"github.com/prebid/prebid-cache/utils"
 )
 
 func NewBackend(cfg config.Configuration, appMetrics *metrics.Metrics) backends.Backend {
 	backend := newBaseBackend(cfg.Backend, appMetrics)
+	backend = DecorateBackend(cfg, appMetrics, backend)
+
+	return backend
+}
+
+func DecorateBackend(cfg config.Configuration, appMetrics *metrics.Metrics, backend backends.Backend) backends.Backend {
 	backend = applyCompression(cfg.Compression, backend)
 	if cfg.RequestLimits.MaxSize > 0 {
 		backend = decorators.EnforceSizeLimit(backend, cfg.RequestLimits.MaxSize)
@@ -20,6 +30,7 @@ func NewBackend(cfg config.Configuration, appMetrics *metrics.Metrics) backends.
 	// We should re-work this strategy at some point.
 	backend = decorators.LogMetrics(backend, appMetrics)
 	backend = decorators.LimitTTLs(backend, getMaxTTLSeconds(cfg))
+
 	return backend
 }
 
@@ -37,6 +48,9 @@ func applyCompression(cfg config.Compression, backend backends.Backend) backends
 }
 
 func newBaseBackend(cfg config.Backend, appMetrics *metrics.Metrics) backends.Backend {
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
 	switch cfg.Type {
 	case config.BackendCassandra:
 		return backends.NewCassandraBackend(cfg.Cassandra)
@@ -47,7 +61,7 @@ func newBaseBackend(cfg config.Backend, appMetrics *metrics.Metrics) backends.Ba
 	case config.BackendAerospike:
 		return backends.NewAerospikeBackend(cfg.Aerospike, appMetrics)
 	case config.BackendRedis:
-		return backends.NewRedisBackend(cfg.Redis)
+		return backends.NewRedisBackend(cfg.Redis, ctx)
 	default:
 		logger.Fatal("Unknown backend type: %s", cfg.Type)
 	}
@@ -70,20 +84,20 @@ func getMaxTTLSeconds(cfg config.Configuration) int {
 	case config.BackendCassandra:
 		// If config.request_limits.max_ttl_seconds was defined to be less than 2400 seconds, go
 		// with 2400 as it has been the TTL limit hardcoded in the Cassandra backend so far.
-		if maxTTLSeconds > 2400 {
-			maxTTLSeconds = 2400
+		if maxTTLSeconds > utils.CASSANDRA_DEFAULT_TTL_SECONDS {
+			maxTTLSeconds = utils.CASSANDRA_DEFAULT_TTL_SECONDS
 		}
 	case config.BackendAerospike:
 		// If both config.request_limits.max_ttl_seconds and config.backend.aerospike.default_ttl_seconds
 		// were defined, the smallest value takes preference
-		if cfg.Backend.Aerospike.DefaultTTL > 0 && maxTTLSeconds > cfg.Backend.Aerospike.DefaultTTL {
-			maxTTLSeconds = cfg.Backend.Aerospike.DefaultTTL
+		if cfg.Backend.Aerospike.DefaultTTLSecs > 0 && maxTTLSeconds > cfg.Backend.Aerospike.DefaultTTLSecs {
+			maxTTLSeconds = cfg.Backend.Aerospike.DefaultTTLSecs
 		}
 	case config.BackendRedis:
 		// If both config.request_limits.max_ttl_seconds and backend.redis.expiration
 		// were defined, the smallest value takes preference
-		if cfg.Backend.Redis.Expiration > 0 && maxTTLSeconds > cfg.Backend.Redis.Expiration*60 {
-			maxTTLSeconds = cfg.Backend.Redis.Expiration * 60
+		if cfg.Backend.Redis.ExpirationMinutes > 0 && maxTTLSeconds > cfg.Backend.Redis.ExpirationMinutes*60 {
+			maxTTLSeconds = cfg.Backend.Redis.ExpirationMinutes * 60
 		}
 	}
 	return maxTTLSeconds
