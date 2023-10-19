@@ -1,5 +1,6 @@
 package stats
 
+//noStats stats for testing
 type noStats struct{}
 
 func (ns noStats) LogCacheFailedGetStats(string) {}
