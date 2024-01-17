@@ -5,8 +5,20 @@ import (
 )
 
 func TestStatsInit(t *testing.T) {
-	InitStat("127.0.0.1", "8888", "TestHost", "TestDC",
-		"8080", 2, 20000, 3, 2, 5, 2, 2, true)
+	InitStat(&StatsConfig{
+		Host:                      "127.0.0.1",
+		Port:                      "8080",
+		DCName:                    "TestDC",
+		DefaultHostName:           "N:P",
+		UseHostName:               false,
+		PublishInterval:           2,
+		PublishThreshold:          20000,
+		Retries:                   3,
+		DialTimeout:               5,
+		KeepAliveDuration:         2,
+		MaxIdleConnections:        2,
+		MaxIdleConnectionsPerHost: 2,
+	})
 }
 
 func TestStatsLogCacheFailedGetStats(t *testing.T) {

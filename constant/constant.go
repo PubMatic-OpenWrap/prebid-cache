@@ -22,10 +22,13 @@ const (
 
 	// UnexpErr : POST /cache had an unexpected error
 	UnexpErr = "107"
+)
 
-	//Node and Pod names for K8S
-	DEFAULT_NODENAME  = "Default_Node"
-	DEFAULT_PODNAME   = "Default_Pod"
-	ENV_VAR_NODE_NAME = "MY_NODE_NAME"
-	ENV_VAR_POD_NAME  = "MY_POD_NAME"
+const (
+	DefaultNodeName = "Default_Node" //DefaultNodeName is the default node name for K8s environment
+	DefaultPodName  = "Default_Pod"  //DefaultPodName is the default pod name for K8s environment
+	DefaultDCName   = "Default_DC"   //DefaultPodName is the default pod name for K8s environment
+	EnvVarNodeName  = "MY_NODE_NAME" //EnvVarNodeName is the environment variable for node name in K8s environment
+	EnvVarPodName   = "MY_POD_NAME"  //EnvVarPodName is the environment variable for pod name in K8s environment
+	EnvVarDCName    = "CLUSTER_NAME" //EnvVarDCName is the environment variable for cluster name in k8s environment
 )

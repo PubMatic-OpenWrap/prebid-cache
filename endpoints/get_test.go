@@ -6,20 +6,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/prebid/prebid-cache/stats"
-
 	"github.com/julienschmidt/httprouter"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/prebid/prebid-cache/backends"
 	"github.com/prebid/prebid-cache/metrics"
 	"github.com/prebid/prebid-cache/metrics/metricstest"
+	"github.com/prebid/prebid-cache/metrics/stats"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	stats.InitStat("", "", "", "", "", 0, 0, 0, 0, 0, 0, 0, false)
+	stats.InitStat(&stats.StatsConfig{})
 }
 
 func TestGetInvalidUUIDs(t *testing.T) {

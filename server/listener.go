@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/prebid-cache/metrics"
 )
 

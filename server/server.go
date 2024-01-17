@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/metrics"
 	localprometheus "github.com/prebid/prebid-cache/metrics/prometheus"

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/go-redis/redis/v8"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/utils"

@@ -3,7 +3,7 @@ package endpoints
 import (
 	"net/http"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/julienschmidt/httprouter"
 )
 

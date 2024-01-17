@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 )
 
 type Backend struct {

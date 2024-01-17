@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/julienschmidt/httprouter"
 	"github.com/prebid/prebid-cache/backends"
 	"github.com/prebid/prebid-cache/constant"
 	"github.com/prebid/prebid-cache/metrics"
-	"github.com/prebid/prebid-cache/stats"
+	"github.com/prebid/prebid-cache/metrics/stats"
 	"github.com/prebid/prebid-cache/utils"
 )
 
