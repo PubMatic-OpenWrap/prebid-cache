@@ -5,12 +5,12 @@ import (
 	"errors"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	as "github.com/aerospike/aerospike-client-go/v6"
 	as_types "github.com/aerospike/aerospike-client-go/v6/types"
 	"github.com/prebid/prebid-cache/config"
 	"github.com/prebid/prebid-cache/metrics"
-	"github.com/prebid/prebid-cache/stats"
+	"github.com/prebid/prebid-cache/metrics/stats"
 	"github.com/prebid/prebid-cache/utils"
 )
 

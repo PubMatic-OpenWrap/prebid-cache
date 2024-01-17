@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
+	"git.pubmatic.com/PubMatic/go-common/logger"
 	"github.com/golang/snappy"
 	"github.com/prebid/prebid-cache/backends"
 )

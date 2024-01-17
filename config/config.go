@@ -2,13 +2,11 @@ package config
 
 import (
 	"log"
-	"os"
 	"strings"
 	"time"
 
-	"git.pubmatic.com/PubMatic/go-common.git/logger"
-	"github.com/prebid/prebid-cache/constant"
-	"github.com/prebid/prebid-cache/stats"
+	"git.pubmatic.com/PubMatic/go-common/logger"
+	"github.com/prebid/prebid-cache/metrics/stats"
 	"github.com/spf13/viper"
 
 	"github.com/prebid/prebid-cache/utils"
@@ -38,11 +36,9 @@ func NewConfig(filename string) Configuration {
 		logger.Fatal("Failed to unmarshal config: %v", err)
 	}
 
-	cfg.Server.ServerName = getHostName()
+	cfg.Server.ServerName = utils.GetServerName()
 
-	//Initialize Stats Server
-	stats.InitStat(cfg.Stats.StatsHost, cfg.Stats.StatsPort, cfg.Server.ServerName, cfg.Stats.StatsDCName,
-		cfg.Stats.PortTCP, cfg.Stats.PublishInterval, cfg.Stats.PublishThreshold, cfg.Stats.Retries, cfg.Stats.DialTimeout, cfg.Stats.KeepAliveDuration, cfg.Stats.MaxIdleConnections, cfg.Stats.MaxIdleConnectionsPerHost, cfg.Stats.UseTCP)
+	stats.InitStat(&cfg.Stats)
 
 	var logConf logger.LogConf
 	logConf.LogLevel = cfg.OWLog.LogLevel
@@ -121,20 +117,20 @@ func setEnvVarsLookup(v *viper.Viper) {
 }
 
 type Configuration struct {
-	Port           int           `mapstructure:"port"`
-	AdminPort      int           `mapstructure:"admin_port"`
-	IndexResponse  string        `mapstructure:"index_response"`
-	Log            Log           `mapstructure:"log"`
-	RateLimiting   RateLimiting  `mapstructure:"rate_limiter"`
-	RequestLimits  RequestLimits `mapstructure:"request_limits"`
-	StatusResponse string        `mapstructure:"status_response"`
-	Backend        Backend       `mapstructure:"backend"`
-	Compression    Compression   `mapstructure:"compression"`
-	Metrics        Metrics       `mapstructure:"metrics"`
-	Routes         Routes        `mapstructure:"routes"`
-	Stats          Stats         `mapstructure:"stats"`
-	Server         Server        `mapstructure:"server"`
-	OWLog          OWLog         `mapstructure:"ow_log"`
+	Port           int               `mapstructure:"port"`
+	AdminPort      int               `mapstructure:"admin_port"`
+	IndexResponse  string            `mapstructure:"index_response"`
+	Log            Log               `mapstructure:"log"`
+	RateLimiting   RateLimiting      `mapstructure:"rate_limiter"`
+	RequestLimits  RequestLimits     `mapstructure:"request_limits"`
+	StatusResponse string            `mapstructure:"status_response"`
+	Backend        Backend           `mapstructure:"backend"`
+	Compression    Compression       `mapstructure:"compression"`
+	Metrics        Metrics           `mapstructure:"metrics"`
+	Routes         Routes            `mapstructure:"routes"`
+	Stats          stats.StatsConfig `mapstructure:"stats"`
+	Server         Server            `mapstructure:"server"`
+	OWLog          OWLog             `mapstructure:"ow_log"`
 }
 
 // ValidateAndLog validates the config, terminating the program on any errors.
@@ -152,10 +148,10 @@ func (cfg *Configuration) ValidateAndLog() {
 
 	cfg.Compression.validateAndLog()
 	cfg.Metrics.validateAndLog()
-	cfg.Stats.validateAndLog()
 	cfg.Server.validateAndLog()
 	cfg.OWLog.validateAndLog()
 	cfg.Routes.validateAndLog()
+	validateAndLogStats(cfg.Stats)
 }
 
 type Log struct {
@@ -345,38 +341,19 @@ func (cfg *Routes) validateAndLog() {
 	}
 }
 
-type Stats struct {
-	StatsHost   string `mapstructure:"host"`
-	StatsPort   string `mapstructure:"port"`
-	StatsDCName string `mapstructure:"dc_name"`
-
-	PortTCP                   string `mapstructure:"port_tcp"`
-	PublishInterval           int    `mapstructure:"publish_interval"`
-	PublishThreshold          int    `mapstructure:"publish_threshold"`
-	Retries                   int    `mapstructure:"retries"`
-	DialTimeout               int    `mapstructure:"dial_timeout"`
-	KeepAliveDuration         int    `mapstructure:"keep_alive_duration"`
-	MaxIdleConnections        int    `mapstructure:"max_idle_connections"`
-	MaxIdleConnectionsPerHost int    `mapstructure:"max_idle_connections_per_host"`
-
-	UseTCP bool `mapstructure:"use_tcp"`
-}
-
-func (cfg *Stats) validateAndLog() {
-	logger.Info("config.stats.host: %s", cfg.StatsHost)
-	logger.Info("config.stats.port: %s", cfg.StatsPort)
-	logger.Info("config.stats.dc_name: %s", cfg.StatsDCName)
-
-	logger.Info("config.stats.port_tcp: %s", cfg.PortTCP)
-	logger.Info("config.stats.publisher_interval: %d", cfg.PublishInterval)
-	logger.Info("config.stats.publisher_threshold: %d", cfg.PublishThreshold)
-	logger.Info("config.stats.retries: %d", cfg.Retries)
-	logger.Info("config.stats.dial_timeout: %d", cfg.DialTimeout)
-	logger.Info("config.stats.keep_alive_duration: %d", cfg.KeepAliveDuration)
-	logger.Info("config.stats.max_idle_connections: %d", cfg.MaxIdleConnections)
-	logger.Info("config.stats.max_idle_connections_per_host: %d", cfg.MaxIdleConnectionsPerHost)
-
-	logger.Info("config.stats.use_tcp: %t", cfg.UseTCP)
+func validateAndLogStats(stats stats.StatsConfig) {
+	logger.Info("config.stats.host: %s", stats.Host)
+	logger.Info("config.stats.port: %s", stats.Port)
+	logger.Info("config.stats.dc_name: %s", stats.DCName)
+	logger.Info("config.stats.default_hostname: %s", stats.DefaultHostName)
+	logger.Info("config.stats.use_hostname: %v", stats.UseHostName)
+	logger.Info("config.stats.publisher_interval: %d", stats.PublishInterval)
+	logger.Info("config.stats.publisher_threshold: %d", stats.PublishThreshold)
+	logger.Info("config.stats.retries: %d", stats.Retries)
+	logger.Info("config.stats.dial_timeout: %d", stats.DialTimeout)
+	logger.Info("config.stats.keep_alive_duration: %d", stats.KeepAliveDuration)
+	logger.Info("config.stats.max_idle_connections: %d", stats.MaxIdleConnections)
+	logger.Info("config.stats.max_idle_connections_per_host: %d", stats.MaxIdleConnectionsPerHost)
 }
 
 type Server struct {
@@ -403,31 +380,4 @@ func (cfg *OWLog) validateAndLog() {
 	logger.Info("config.ow_log.rotation_time: %v", cfg.LogRotationTime)
 	logger.Info("config.ow_log.max_log_files: %v", cfg.MaxLogFiles)
 	logger.Info("config.ow_log.max_log_size: %v", cfg.MaxLogSize)
-}
-
-// getHostName Generates server name from node and pod name in K8S  environment
-func getHostName() string {
-	var (
-		nodeName string
-		podName  string
-	)
-
-	if nodeName, _ = os.LookupEnv(constant.ENV_VAR_NODE_NAME); nodeName == "" {
-		nodeName = constant.DEFAULT_NODENAME
-		logger.Info("Node name not set. Using default name: '%s'", nodeName)
-	} else {
-		nodeName = strings.Split(nodeName, ".")[0]
-	}
-
-	if podName, _ = os.LookupEnv(constant.ENV_VAR_POD_NAME); podName == "" {
-		podName = constant.DEFAULT_PODNAME
-		logger.Info("Pod name not set. Using default name: '%s'", podName)
-	} else {
-		podName = strings.TrimPrefix(podName, "creativecache-")
-	}
-
-	serverName := nodeName + ":" + podName
-	logger.Info("Server name: '%s'", serverName)
-
-	return serverName
 }
