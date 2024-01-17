@@ -33,7 +33,7 @@ func GetServerName() string {
 		podName = constant.DefaultPodName
 		logger.Info("Pod name not set. Using default name: '%s'", podName)
 	} else {
-		podName = strings.TrimPrefix(podName, "wtrackerserver-")
+		podName = strings.TrimPrefix(podName, "creativecache-")
 	}
 
 	serverName := nodeName + ":" + podName

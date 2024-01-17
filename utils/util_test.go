@@ -17,7 +17,7 @@ func TestGetServerNameDefaultValues(t *testing.T) {
 
 func TestGetServerNameWithSpecialCharacters(t *testing.T) {
 	nodeName := "$@^$839.sfo1hy*&2p265.sfo1.pubmatic.local.9(&*@!$"
-	podName := "wtrackerserver-&^@!-5cfcdc97fc-j5dlw-&^#"
+	podName := "creativecache-&^@!-5cfcdc97fc-j5dlw-&^#"
 	os.Setenv(constant.EnvVarNodeName, nodeName)
 	os.Setenv(constant.EnvVarPodName, podName)
 	expectedServerName := "$@^$839" + ":" + "&^@!-5cfcdc97fc-j5dlw-&^#"
