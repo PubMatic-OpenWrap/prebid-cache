@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	as "github.com/aerospike/aerospike-client-go/v6"
-	as_types "github.com/aerospike/aerospike-client-go/v6/types"
+	as "github.com/aerospike/aerospike-client-go/v7"
+	as_types "github.com/aerospike/aerospike-client-go/v7/types"
 	"github.com/prebid/prebid-cache/metrics"
 	"github.com/prebid/prebid-cache/metrics/metricstest"
 	"github.com/prebid/prebid-cache/utils"
