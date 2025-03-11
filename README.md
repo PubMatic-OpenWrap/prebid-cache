@@ -216,7 +216,7 @@ backend:
 ```
 
 ### Aerospike
-Prebid Cache makes use of an Aerospike Go client that requires Aerospike server version 4.9+ and will not work properly with older versions. Full documentation of the Aerospike Go client can be found [here](https://github.com/aerospike/aerospike-client-go/tree/v6).
+Prebid Cache makes use of an Aerospike Go client that requires Aerospike server version 4.9+ and will not work properly with older versions. Full documentation of the Aerospike Go client can be found [here](https://github.com/aerospike/aerospike-client-go/tree/v7).
 | Configuration field | Type | Description |
 | --- | --- | --- |
 | host | string | aerospike server URI |
