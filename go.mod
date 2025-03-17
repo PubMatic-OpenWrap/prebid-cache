@@ -7,7 +7,7 @@ replace github.com/bradfitz/gomemcache => github.com/google/gomemcache v0.0.0-20
 replace github.com/prebid/prebid-cache => ./
 
 require (
-	git.pubmatic.com/PubMatic/go-common v0.0.0-20250313124621-3d2a29c19691
+	git.pubmatic.com/PubMatic/go-common v0.0.0-20231211162912-5d6b67bde771
 	github.com/aerospike/aerospike-client-go/v7 v7.8.0
 	github.com/didip/tollbooth/v6 v6.1.2
 	github.com/go-redis/redis/v8 v8.11.5
