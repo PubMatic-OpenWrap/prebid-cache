@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	as "github.com/aerospike/aerospike-client-go/v6"
-	as_types "github.com/aerospike/aerospike-client-go/v6/types"
+	as "github.com/aerospike/aerospike-client-go/v7"
+	as_types "github.com/aerospike/aerospike-client-go/v7/types"
 	"github.com/google/gomemcache/memcache"
 	"github.com/prebid/prebid-cache/utils"
 )
