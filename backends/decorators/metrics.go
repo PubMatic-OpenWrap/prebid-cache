@@ -48,8 +48,10 @@ func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, 
 	} else {
 		b.metrics.RecordPutBackendInvalid() // Never gets called here. Unreachable
 	}
-	ttl, _ := time.ParseDuration(fmt.Sprintf("%ds", ttlSeconds))
-	b.metrics.RecordPutBackendTTLSeconds(ttl)
+	if ttlSeconds > 0 {
+		ttl, _ := time.ParseDuration(fmt.Sprintf("%ds", ttlSeconds))
+		b.metrics.RecordPutBackendTTLSeconds(ttl)
+	}
 
 	start := time.Now()
 	err := b.delegate.Put(ctx, key, value, ttlSeconds)
