@@ -166,7 +166,7 @@ func TestPutErrorMetrics(t *testing.T) {
 	backend := LogMetrics(&failedBackend{errors.New("Failure")}, m)
 
 	// Run test
-	backend.Put(context.Background(), "foo", "xml<vast></vast>", 0)
+	backend.Put(context.Background(), "foo", "xml<vast></vast>", 1)
 
 	// Assert
 	metricstest.AssertMetrics(t, expectedMetrics, mockMetrics)
@@ -191,7 +191,7 @@ func TestJsonPayloadMetrics(t *testing.T) {
 	backend := LogMetrics(backends.NewMemoryBackend(), m)
 
 	// Run test
-	backend.Put(context.Background(), "foo", "json{\"key\":\"value\"", 0)
+	backend.Put(context.Background(), "foo", "json{\"key\":\"value\"", 1)
 
 	// Assert
 	metricstest.AssertMetrics(t, expectedMetrics, mockMetrics)
@@ -216,7 +216,7 @@ func TestInvalidPayloadMetrics(t *testing.T) {
 	backend := LogMetrics(backends.NewMemoryBackend(), m)
 
 	// Run test
-	backend.Put(context.Background(), "foo", "bar", 0)
+	backend.Put(context.Background(), "foo", "bar", 1)
 
 	// Assert
 	metricstest.AssertMetrics(t, expectedMetrics, mockMetrics)

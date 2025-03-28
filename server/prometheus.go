@@ -15,13 +15,23 @@ func newPrometheusServer(cfg *config.Configuration, promRegistry *prometheus.Reg
 	if promRegistry == nil {
 		logger.Error("Prometheus metrics configured, but a Prometheus metrics engine was not found. Cannot set up a Prometheus listener.")
 	}
+
+	promMux := http.NewServeMux()
+	promMux.Handle("/stats", http.HandlerFunc(func(rsp http.ResponseWriter, req *http.Request) {
+		handler := promhttp.HandlerFor(
+			promRegistry,
+			promhttp.HandlerOpts{
+				ErrorLog:            loggerForPrometheus{},
+				MaxRequestsInFlight: 5,
+				Timeout:             cfg.Metrics.Prometheus.Timeout(),
+			},
+		)
+		handler.ServeHTTP(rsp, req)
+	}))
+
 	return &http.Server{
-		Addr: ":" + strconv.Itoa(cfg.Metrics.Prometheus.Port),
-		Handler: promhttp.HandlerFor(promRegistry, promhttp.HandlerOpts{
-			ErrorLog:            loggerForPrometheus{},
-			MaxRequestsInFlight: 5,
-			Timeout:             cfg.Metrics.Prometheus.Timeout(),
-		}),
+		Addr:    ":" + strconv.Itoa(cfg.Metrics.Prometheus.Port),
+		Handler: promMux,
 	}
 }
 
