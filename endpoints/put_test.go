@@ -676,7 +676,7 @@ func TestBadPayloadSizePutError(t *testing.T) {
 
 func TestInternalPutClientError(t *testing.T) {
 	// Input
-	reqBody := "{\"puts\":[{\"type\":\"xml\",\"value\":\"some data\"}]}"
+	reqBody := "{\"puts\":[{\"type\":\"xml\",\"value\":\"some data\",\"ttlseconds\":60}]}"
 	// Expected metrics
 	expectedMetrics := []string{
 		"RecordPutTotal",
