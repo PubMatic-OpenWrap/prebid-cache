@@ -79,7 +79,7 @@ func CreatePrometheusMetrics(cfg config.PrometheusMetrics) *PrometheusMetrics {
 	timeBuckets := []float64{0.001, 0.002, 0.005, 0.01, 0.025, 0.05}
 	// TTL seconds buckets for 1 second, half a minute as well as one, ten, fifteen, thirty minutes and 1, 2, and 3 and 10 hours
 	ttlBuckets := []float64{0.001, 1, 30, 60, 600, 900, 1800, 3600, 7200, 10800, 36000}
-	requestSizeBuckets := []float64{0, 25000, 50000,75000,100000}
+	requestSizeBuckets := []float64{0, 25000, 50000, 75000, 100000}
 	registry := prometheus.NewRegistry()
 	promMetrics := &PrometheusMetrics{
 		Registry: registry,
