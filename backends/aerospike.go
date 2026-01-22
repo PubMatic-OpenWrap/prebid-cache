@@ -15,7 +15,7 @@ import (
 )
 
 const setName = "uuid"
-const binValue = "value"
+const binValue = ""
 
 // AerospikeDB is a wrapper for the Aerospike client
 type AerospikeDB interface {
